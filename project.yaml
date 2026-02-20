@@ -1,0 +1,19 @@
+project:
+  name: "Heimdall Battery Sentinel"
+  description: "A battery power level monitor for Home Assistant"
+
+paths:
+  root: "~/github.com/declanshanaghy/heimdall-battery-sentinel-oc"
+  planning: "_bmad-output/planning-artifacts"
+  implementation: "_bmad-output/implementation-artifacts"
+
+stack:
+  frontend: "Home Assistant Top Level Page in Sidebar"
+  backend: "Home Assistant Integration - see https://developers.home-assistant.io/docs/development_index/"
+  language: "Python3 for the backend, Javascript for the frontend"
+
+constraints:
+  max_stories_per_sprint: 5
+  require_code_review: true
+  require_ux_review: false
+  require_qa: false
