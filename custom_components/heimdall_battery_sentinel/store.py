@@ -1,0 +1,1 @@
+"""Data storage for Heimdall Battery Sentinel."""

@@ -1,0 +1,9 @@
+{
+  "domain": "heimdall_battery_sentinel",
+  "name": "Heimdall Battery Sentinel",
+  "version": "0.1.0",
+  "documentation": "https://github.com/declanshanaghy/heimdall-battery-sentinel",
+  "requirements": [],
+  "dependencies": [],
+  "codeowners": ["@declanshanaghy"]
+}

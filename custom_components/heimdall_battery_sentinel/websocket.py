@@ -1,0 +1,1 @@
+"""WebSocket API for Heimdall Battery Sentinel."""
