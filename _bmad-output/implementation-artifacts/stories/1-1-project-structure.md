@@ -4,7 +4,7 @@
 - **Id:** 1-1
 - **Size:** 1 day
 - **Epic:** Core Integration Setup (Epic 1)
-- **Status:** review
+- **Status:** ready-for-dev
 
 ## Description
 Initialize the integration structure following Home Assistant custom integration patterns. Creates the foundational project structure with all required directories, files, and configurations to support the battery monitoring and unavailable tracking features.
