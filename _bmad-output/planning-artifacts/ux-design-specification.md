@@ -13,29 +13,46 @@
 ### Color Palette
 ```mermaid
 graph LR
-    HA_Primary[HA Primary] -->|Derived| Primary[Primary: #03A9F4]
-    HA_Accent[HA Accent] -->|Derived| Secondary[Secondary: #FF9800]
-    HA_Error[HA Error] -->|Derived| Error[Error: #F44336]
-    
+    subgraph Base Colors
+        Primary["Primary\n#03A9F4"]:::swatch_primary
+        Accent["Accent\n#FF9800"]:::swatch_accent
+        Error["Error\n#F44336"]:::swatch_error
+    end
+
     subgraph Light Mode
-        LM_BG[Background: #FFFFFF]
-        LM_Surface[Surface: #F5F5F5]
-        LM_Text[Text: #212121]
-        LM_Secondary[Secondary Text: #757575]
+        LM_BG["Background\n#FFFFFF"]:::swatch_lm_bg
+        LM_Surface["Surface\n#F5F5F5"]:::swatch_lm_surface
+        LM_Text["Text\n#212121"]:::swatch_lm_text
+        LM_Secondary["Secondary Text\n#757575"]:::swatch_lm_secondary
     end
-    
+
     subgraph Dark Mode
-        DM_BG[Background: #121212]
-        DM_Surface[Surface: #1E1E1E]
-        DM_Text[Text: #E0E0E0]
-        DM_Secondary[Secondary Text: #9E9E9E]
+        DM_BG["Background\n#121212"]:::swatch_dm_bg
+        DM_Surface["Surface\n#1E1E1E"]:::swatch_dm_surface
+        DM_Text["Text\n#E0E0E0"]:::swatch_dm_text
+        DM_Secondary["Secondary Text\n#9E9E9E"]:::swatch_dm_secondary
     end
-    
+
     subgraph Severity
-        Critical[Critical: #F44336]
-        Warning[Warning: #FF9800]
-        Notice[Notice: #FFEB3B]
+        Critical["Critical\n#F44336"]:::swatch_critical
+        Warning["Warning\n#FF9800"]:::swatch_warning
+        Notice["Notice\n#FFEB3B"]:::swatch_notice
     end
+
+    classDef swatch_primary fill:#03A9F4,color:#000000,stroke:#03A9F4
+    classDef swatch_accent fill:#FF9800,color:#000000,stroke:#FF9800
+    classDef swatch_error fill:#F44336,color:#FFFFFF,stroke:#F44336
+    classDef swatch_lm_bg fill:#FFFFFF,color:#000000,stroke:#DDDDDD
+    classDef swatch_lm_surface fill:#F5F5F5,color:#000000,stroke:#CCCCCC
+    classDef swatch_lm_text fill:#212121,color:#FFFFFF,stroke:#212121
+    classDef swatch_lm_secondary fill:#757575,color:#FFFFFF,stroke:#757575
+    classDef swatch_dm_bg fill:#121212,color:#FFFFFF,stroke:#333333
+    classDef swatch_dm_surface fill:#1E1E1E,color:#FFFFFF,stroke:#333333
+    classDef swatch_dm_text fill:#E0E0E0,color:#000000,stroke:#E0E0E0
+    classDef swatch_dm_secondary fill:#9E9E9E,color:#000000,stroke:#9E9E9E
+    classDef swatch_critical fill:#F44336,color:#FFFFFF,stroke:#F44336
+    classDef swatch_warning fill:#FF9800,color:#000000,stroke:#FF9800
+    classDef swatch_notice fill:#FFEB3B,color:#000000,stroke:#FFEB3B
 ```
 
 ### Typography Scale
