@@ -1,117 +1,188 @@
 # UX Design Specification: Heimdall Battery Sentinel
 
-## 1. Design Principles
+## Design Principles
 
-1. **Clarity First**: Provide immediate, unambiguous visibility into battery health and device availability without overwhelming the user.
-2. **Native Cohesion**: Seamlessly integrate with Home Assistant's Material Design-inspired UI while maintaining distinct identity for the battery monitoring features.
-3. **Responsive Resilience**: Maintain consistent functionality and legibility across all viewing contexts.
-4. **Action-Oriented**: Highlight critical information and provide clear paths to address issues.
-5. **Accessible Insight**: Ensure all users can understand and interact with the information.
+1. **Clarity First**: Prioritize clear information hierarchy to quickly identify critical issues (low batteries, unavailable entities)
+2. **Native Integration**: Seamlessly match Home Assistant's Material Design aesthetic while adding distinctive battery-focused visual language
+3. **Progressive Disclosure**: Show essential information first, with details available on interaction
+4. **Responsive Resilience**: Ensure consistent experience across mobile, tablet, and desktop views
+5. **Accessible by Default**: Meet or exceed WCAG 2.1 AA standards for all components
 
-## 2. Design Tokens
+## Design Tokens
 
 ### Color Palette
-- **Primary**: `#4285F4`
-- **Secondary**: `#34A853`
-- **Semantic**: 
-  - Critical: `#EA4335`
-  - Warning: `#FBBC05`
-  - Informational: `#4285F4`
-- **Light Mode**: 
-  - Surface: `#FFFFFF`
-  - Cards: `#F8F9FA`
-- **Dark Mode**: 
-  - Surface: `#202124`
-  - Cards: `#303134`
+```mermaid
+graph LR
+    HA_Primary[HA Primary] -->|Derived| Primary[Primary: #03A9F4]
+    HA_Accent[HA Accent] -->|Derived| Secondary[Secondary: #FF9800]
+    HA_Error[HA Error] -->|Derived| Error[Error: #F44336]
+    
+    subgraph Light Mode
+        LM_BG[Background: #FFFFFF]
+        LM_Surface[Surface: #F5F5F5]
+        LM_Text[Text: #212121]
+        LM_Secondary[Secondary Text: #757575]
+    end
+    
+    subgraph Dark Mode
+        DM_BG[Background: #121212]
+        DM_Surface[Surface: #1E1E1E]
+        DM_Text[Text: #E0E0E0]
+        DM_Secondary[Secondary Text: #9E9E9E]
+    end
+    
+    subgraph Severity
+        Critical[Critical: #F44336]
+        Warning[Warning: #FF9800]
+        Notice[Notice: #FFEB3B]
+    end
+```
 
 ### Typography Scale
-- **H1**: 24px (semibold)
-- **H2**: 20px (semibold)
-- **Body**: 16px (regular)
-- **Caption**: 14px (regular)
+```mermaid
+pie
+    title Typography Scale
+    "H6: 1.25rem" : 20
+    "Subtitle1: 1rem" : 30
+    "Body1: 0.875rem" : 40
+    "Caption: 0.75rem" : 10
+```
 
 ### Spacing System
-- **XS**: 4px
-- **S**: 8px
-- **M**: 16px
-- **L**: 24px
-- **XL**: 32px
+```mermaid
+flowchart TD
+    Space[4px Base Unit]
+    Space --> XS[4px]
+    Space --> S[8px]
+    Space --> M[16px]
+    Space --> L[24px]
+    Space --> XL[32px]
+```
 
-### Border Radii
-- **Small**: 4px
-- **Medium**: 8px
-- **Large**: 12px
+### Other Tokens
+- Border Radii: 4px
+- Shadows: 0 2px 4px rgba(0,0,0,0.1)
+- Animation Timing: 200ms for micro-interactions, 300ms for transitions
 
-### Shadows
-- **Low**: 0 1px 2px rgba(0,0,0,0.1)
-- **Medium**: 0 2px 6px rgba(0,0,0,0.15)
-- **High**: 0 4px 12px rgba(0,0,0,0.2)
-
-### Animation Timing
-- **Micro-interactions**: 200ms
-- **Page Transitions**: 300ms
-- **Data Loading**: 500ms (eased)
-
-## 3. Component Library
-
-### Battery Severity Indicator
-- **Critical**: Red + mdi:battery-alert
-- **Warning**: Orange + mdi:battery-30
-- **Low**: Yellow + mdi:battery-50
-
-### Entity Row States
-- **Default**: Neutral
-- **Hover**: Light blue tint
-- **Active**: Subtle elevation
-- **Disabled**: 50% opacity
-- **Error**: Red border left
+## Component Library
 
 ### Table Component
-- **Header**: Light grey bg
-- **Sort**: Primary color arrow
-- **Striping**: Zebra pattern
-
-## 4. Page Layouts
-
-### Main Page
+```mermaid
+graph TD
+    Table[Table] --> Header[Header Row]
+    Table --> Body[Body Rows]
+    Table --> Footer[Footer]
+    
+    Header --> Sort[Sort Indicator]
+    Header --> Column[Column Title]
+    
+    Body --> Row[Data Row]
+    Row --> States
+    States --> Default[Default]
+    States --> Hover[Hover: +10% opacity]
+    States --> Selected[Selected: Primary 10%]
+    States --> Critical[Critical: Red 10%]
+    States --> Warning[Warning: Orange 10%]
+    States --> Notice[Notice: Yellow 10%]
+    
+    Footer --> Loading[Loading Indicator]
+    Footer --> End[End of List]
+    Footer --> Pagination[Page Info]
+    
+    Accessibility --> Keyboard[Keyboard Navigable]
+    Accessibility --> Aria[Aria Roles]
+    Accessibility --> Contrast[4.5:1 Contrast]
 ```
-[ Tabs: Low Battery | Unavailable ]
-[ Search ] [ Threshold Slider ]
-----------------------------------
-| Name      | Device    | Area   |
-----------------------------------
-| Entity 1  | Model     | Area   |
-| Entity 2  | Model     | Area   |
-| Loading...                    |
-| End of list                   |
-----------------------------------
+
+### Threshold Slider
+```mermaid
+graph LR
+    Slider[Slider] --> Track[Track]
+    Slider --> Thumb[Thumb]
+    
+    Track --> Default[Default: Secondary 30%]
+    Track --> Active[Active: Secondary]
+    
+    Thumb --> Default[Default: Secondary]
+    Thumb --> Hover[Hover: Secondary +10% lightness]
+    Thumb --> Focus[Focus: Primary + Outline]
+    
+    States --> Disabled[Disabled: 50% opacity]
+    
+    Accessibility --> Labels[Value Labels]
+    Accessibility --> Keyboard[Keyboard Control]
 ```
 
-**Responsive**:
-- Mobile: 1 column
-- Tablet: 2 columns
-- Desktop: Full table
+## Page Layouts
 
-## 5. Interaction Patterns
+### Main Page Layout
+```mermaid
+graph TD
+    Page[Heimdall Battery Sentinel] --> Header[Page Header]
+    Page --> Tabs[Tabs Container]
+    Page --> Content[Content Area]
+    
+    Header --> Title[Title]
+    Header --> Config[Config Button]
+    
+    Tabs --> Tab1[Low Battery]
+    Tabs --> Tab2[Unavailable]
+    Tabs --> Count1[Live Count]
+    Tabs --> Count2[Live Count]
+    
+    Content --> Table[Data Table]
+    Content --> Footer[Footer Controls]
+    
+    Footer --> Threshold[Threshold Slider]
+    Footer --> Info[Page Info]
+```
 
-### Threshold Adjustment
-1. User moves slider
-2. Loading spinner appears
-3. Backend processes
-4. UI updates dynamically
-5. Success indicator pulses
+### Responsive Behavior
+```mermaid
+graph LR
+    Desktop[Desktop] --> 3Col[3 Columns: Name, Device, Area]
+    Tablet[Tablet] --> 2Col[2 Columns: Name, Device]
+    Mobile[Mobile] --> 1Col[1 Column: Name + Details]
+```
 
-### Data Loading
-1. Initial: Skeleton screens
-2. Pagination: "Loading..."
-3. Error: Red border + retry
-4. Empty: Message + illustration
+## Interaction Patterns
 
-## 6. Accessibility
+### Threshold Change Flow
+```mermaid
+sequenceDiagram
+    User->>UI: Adjusts Threshold Slider
+    UI->>Backend: Threshold Update Event
+    Backend->>Backend: Re-evaluate Battery State
+    Backend->>UI: Dataset Invalidated
+    UI->>UI: Reset to Page 0
+    UI->>Backend: Request New Data
+    Backend->>UI: Send Updated Rows
+    UI->>UI: Render Updated Table
+```
 
-- **Contrast**: Min 4.5:1 ratio
-- **Focus**: Clear visual states
-- **Screen Readers**: ARIA labels
-- **Keyboard**: Full tab support
-- **Reduced Motion**: Disable animations
-- **Dark Mode**: Full support
+### Infinite Scroll
+```mermaid
+flowchart TD
+    Start[User Scrolls] --> Detect[Detect Bottom 20%]
+    Detect -->|Visible| Load[Show Loading Indicator]
+    Load --> Request[Request Next Page]
+    Request -->|Success| Render[Render New Rows]
+    Render -->|More Data| Detect
+    Render -->|No More| ShowEnd[Show End Indicator]
+    Request -->|Error| Error[Show Error State]
+```
+
+## Accessibility
+
+- **Color Contrast**: Minimum 4.5:1 for text, 3:1 for UI components
+- **Focus Management**: Visible focus indicators for all interactive elements
+- **Screen Reader**:
+  - ARIA roles for tables (grid, row, cell)
+  - Live regions for count updates
+  - Status announcements for loading states
+- **Keyboard Navigation**:
+  - Tab navigation between interactive elements
+  - Arrow key navigation within tables
+  - Space/Enter to activate controls
+- **Reduced Motion**: Respect prefers-reduced-motion for animations
+- **Dark Mode**: Full support for HA's dark theme
