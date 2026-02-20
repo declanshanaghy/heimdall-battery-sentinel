@@ -3,7 +3,7 @@ project:
   description: "A battery power level monitor for Home Assistant"
 
 paths:
-  root: "~/github.com/declanshanaghy/heimdall-battery-sentinel-oc"
+  root: "~/github.com/declanshanaghy/heimdall-battery-sentinel"
   planning: "_bmad-output/planning-artifacts"
   implementation: "_bmad-output/implementation-artifacts"
 
