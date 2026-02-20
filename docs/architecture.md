@@ -30,7 +30,7 @@ The system is **event-driven**:
 |-------|------------|---------|-----------|
 | Runtime | Python (Home Assistant Core) | HA-managed | HA custom integrations are Python; leverages HA event bus/state machine. |
 | Backend API | Home Assistant `websocket_api` | HA-managed | PRD requires websocket-based frontend data access; integrates cleanly with HA auth/session. |
-| Frontend | Home Assistant Custom Panel (JS/TS) using Lit + HA UI components | HA-managed | Matches HA frontend architecture and theming; avoids bespoke UI frameworks. |
+| Frontend | Home Assistant Custom Panel (plain JavaScript module) using native HA UI components (no Lit) | HA-managed | Avoids a compile/bundling step and minimizes framework coupling while staying HA-native. |
 | Packaging/Distribution | HACS custom repository format | N/A | Target distribution per PRD; standard for HA community installs. |
 | Testing | `pytest` + HA test harness | HA-managed | Standard for HA integration tests; enables event-driven unit/integration tests. |
 | CI (recommended) | GitHub Actions (lint/test) | N/A | Fast feedback; aligns with HACS expectations and community norms. |
@@ -57,7 +57,8 @@ The system is **event-driven**:
 **Rationale:** Aligns with HA patterns and PRD requirements while minimizing operational complexity.
 
 **Consequences:**
-- Must maintain a small frontend build artifact (JS module) served to HA.
+- Frontend should be shipped as a **plain JavaScript** module (no TypeScript, no bundler-required compile step).
+- Use **native Home Assistant frontend components** (and HA-provided styles/patterns) rather than introducing Lit.
 - Need to manage compatibility with HA frontend API changes over time.
 
 ---
@@ -415,15 +416,9 @@ custom_components/heimdall_battery_sentinel/
 ├── registry.py
 ├── store.py
 ├── websocket.py
-└── manifest.json
-frontend/
-├── src/
-│   ├── panel-heimdall.ts
-│   ├── components/
-│   ├── api/
-│   └── styles/
-└── dist/
-    └── panel-heimdall.js
+├── manifest.json
+└── www/
+    └── panel-heimdall.js   # Plain JS custom panel module (no TS/Lit build)
 hacs.json
 README.md
 docs/
@@ -432,7 +427,7 @@ docs/
 ```
 
 Notes:
-- `frontend/dist` is what HA serves; `frontend/src` is authored code.
+- The panel is shipped as a **static JS file** served by the integration (no bundler/compile step required).
 - Keep message schemas in `websocket.py` close to backend store logic.
 
 ## 8. Coding Standards
@@ -445,7 +440,7 @@ Notes:
 | HA domain | lowercase | `heimdall_battery_sentinel` |
 | Constants | UPPER_SNAKE_CASE | `DEFAULT_THRESHOLD` |
 | Frontend components | kebab-case custom elements | `<heimdall-panel>` |
-| TS classes/types | PascalCase | `LowBatteryRow` |
+| JS classes/types (where used) | PascalCase | `LowBatteryRow` |
 
 ### 8.2 Error Handling
 - Backend:
@@ -462,7 +457,7 @@ Notes:
 
 ### 8.4 Type Safety
 - Backend: add type hints for models and evaluator logic.
-- Frontend: TypeScript types for websocket payloads and rows.
+- Frontend: use small, explicit runtime validation for websocket payloads (and JSDoc typedefs where helpful) without introducing TypeScript.
 
 ## 9. Testing Strategy
 
@@ -470,7 +465,7 @@ Notes:
 |------|------|--------|
 | Unit | `pytest` | Battery evaluator rules; severity thresholds; sorting keys |
 | Integration | HA test harness | Event subscription updates; dataset version invalidation; websocket commands |
-| Frontend | `web-test-runner` or `vitest` (optional) | Sorting toggle logic; infinite scroll state machine |
+| Frontend | Minimal smoke tests (optional) | Sorting toggle logic; infinite scroll state machine |
 | E2E (optional) | Playwright (optional) | Render panel, scroll loads, live updates (harder in HA context) |
 
 Key test cases (must-have):
