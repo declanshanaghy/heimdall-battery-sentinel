@@ -112,8 +112,8 @@ And area name from area registry.
 **Acceptance Criteria:**
 Given the panel is open,  
 When viewing the interface,  
-Then it should show two tabs with live counts,
-And switch between them instantly.
+Then it should show two tabs with live counts that update in real-time,
+And switch between them instantly with visual feedback.
 
 #### 4.2: Sortable Tables
 **Description:** Implement server-side sorting
@@ -123,7 +123,8 @@ And switch between them instantly.
 Given a table with 200+ entities,  
 When clicking a column header,  
 Then it should sort server-side,
-And maintain tie-breaker by friendly name.
+And maintain tie-breaker by friendly name,
+And the column header should show a visual indicator (▲/▼) for the sort direction.
 
 #### 4.3: Infinite Scroll
 **Description:** Implement paginated loading
@@ -133,7 +134,11 @@ And maintain tie-breaker by friendly name.
 Given 150 low battery entities,  
 When scrolling the table,  
 Then it should load in 100-row chunks,
-And show loading/end indicators.
+And show appropriate UI states:
+  - Loading: Spinner with "Loading more entities..."
+  - Empty: "No entities found" message
+  - Error: "Failed to load" with retry button
+  - End-of-list: "You've reached the end" indicator
 
 #### 4.4: Entity Linking
 **Description:** Add entity page links
@@ -142,7 +147,7 @@ And show loading/end indicators.
 **Acceptance Criteria:**
 Given an entity in either table,  
 When clicking its name,  
-Then it should open the HA entity page.
+Then it should open the HA entity page in a new tab.
 
 ---
 
@@ -158,10 +163,22 @@ Then it should open the HA entity page.
 **Acceptance Criteria:**
 Given a new installation,  
 When configuring the integration,  
-Then it should show a slider from 5-100 (step 5),
-With default value 15.
+Then it should show a slider from 5-100 with step=5,
+With default value 15,
+And the value should persist after restart,
+And validate input to ensure it's within range.
 
 ---
+
+## UX Traceability
+
+| UX Element | Story IDs | Details |
+|------------|-----------|---------|
+| Tabs + live counts | 4.1 | Visible tab indicators with real-time entity counts |
+| Sortable table headers | 4.2 | Interactive headers with ▲/▼ indicators for sort state |
+| Infinite scroll UI states | 4.3 | Loading, empty, error, and end-of-list states |
+| Entity linking | 4.4 | Navigation to HA entity detail pages |
+| Threshold slider | 5.1 | Slider with step=5, range 5-100, persistent values |
 
 ## Requirement Traceability
 
