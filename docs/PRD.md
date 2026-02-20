@@ -3,7 +3,9 @@
 **Version:** 1.5  
 **Date:** 2026-02-19  
 **Author:** BMAD Business Analyst (with Product Owner inputs)  
-**Status:** Draft
+**Status:** Draft  
+
+**Prioritization Framework:** This PRD uses **MoSCoW** prioritization (Must / Should / Could / Won’t).
 
 ## Document History
 
@@ -38,9 +40,10 @@ Define the MVP product requirements for **Heimdall Battery Sentinel**, a Home As
 - Robust handling of entity lifecycle (new, updated, removed) and edge cases
 
 **Out of scope (MVP):**
-- Notifications/alerts
-- Search/filter box
-- HACS publishing automation (until after UAT)
+- Notifications/alerts (**Could**)
+- Search/filter box (**Could**)
+- HACS publishing automation (until after UAT) (**Could**)
+- Predictive analytics / battery life estimation (**Won’t**)
 
 ## 2. Product Overview
 
@@ -133,7 +136,21 @@ Severity rule (numeric batteries only):
 - Target: HACS (publishing setup after UAT)
 - Development/UAT: publish directly to Dek’s HA server
 
-## 5. Key Decisions (summary)
+## 5. Future Scope (MoSCoW)
+
+### 5.1 Could (post-MVP)
+| ID | Requirement | Priority | Notes |
+|---|---|---:|---|
+| CR-ALERT-001 | Add notifications/alerts for low-battery and/or unavailable entities | Could | Destination TBD (mobile push, Slack, etc.) |
+| CR-UI-SEARCH-001 | Add a search/filter box above each tab table | Could | Client-side filtering is acceptable |
+| CR-HACS-REL-001 | Add automation for HACS publishing (release workflow, metadata validation) | Could | Only after UAT |
+
+### 5.2 Won’t (explicitly not planned)
+| ID | Requirement | Priority | Notes |
+|---|---|---:|---|
+| WR-ANALYTICS-001 | Predictive analytics / battery life estimation | Won’t | Not planned for this project |
+
+## 6. Key Decisions (summary)
 - Entity-first approach for low-battery and unavailable.
 - Threshold: default 15%, slider 5–100 step 5, editable anytime.
 - Numeric batteries only if unit is `%`; textual only `low/medium/high` and show only `low`.
