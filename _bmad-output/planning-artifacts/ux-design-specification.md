@@ -56,14 +56,17 @@ graph LR
 ```
 
 ### Typography Scale
-```mermaid
-pie
-    title Typography Scale
-    "H6: 1.25rem" : 20
-    "Subtitle1: 1rem" : 30
-    "Body1: 0.875rem" : 40
-    "Caption: 0.75rem" : 10
-```
+
+| Style token | Size | Weight | Line height | Usage |
+|---|---:|---:|---:|---|
+| **H6** | 1.25rem (20px) | 600 | 1.3 | Page/section titles inside the HA panel |
+| **Subtitle1** | 1rem (16px) | 500 | 1.4 | Row group headers, secondary titles |
+| **Body1** | 0.875rem (14px) | 400 | 1.5 | Primary body text, entity row text |
+| **Caption** | 0.75rem (12px) | 400 | 1.4 | Helper text, metadata, timestamps |
+
+Notes:
+- Prefer Home Assistant theme typography variables where available; these values define the intended visual scale.
+- Ensure text remains readable in both light/dark themes (contrast ≥ 4.5:1).
 
 ### Spacing System
 ```mermaid
