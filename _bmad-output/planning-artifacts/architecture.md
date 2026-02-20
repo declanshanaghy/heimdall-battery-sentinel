@@ -249,30 +249,14 @@ Cache resolved metadata per `entity_id` / `device_id` and invalidate on registry
 
 ### 4.1 High-Level Diagram
 
-```
-┌───────────────────────────┐
-│ Home Assistant Frontend    │
-│  - Sidebar Panel UI        │
-│  - Tabs + tables           │
-│  - Infinite scroll         │
-└───────────────┬───────────┘
-                │ WebSocket (HA session)
-                ▼
-┌───────────────────────────┐
-│ Heimdall Battery Sentinel  │
-│ (custom integration)       │
-│  - Event subscriptions     │
-│  - Derived cache           │
-│  - WS commands             │
-└───────────────┬───────────┘
-                │
-                ▼
-┌───────────────────────────┐
-│ Home Assistant Core        │
-│  - State machine           │
-│  - Entity/Device/Area regs │
-│  - Event bus               │
-└───────────────────────────┘
+```mermaid
+graph TD
+    A["<b>Home Assistant Frontend</b><br/>- Sidebar Panel UI<br/>- Tabs + tables<br/>- Infinite scroll"]
+    B["<b>Heimdall Battery Sentinel</b><br/>(custom integration)<br/>- Event subscriptions<br/>- Derived cache<br/>- WS commands"]
+    C["<b>Home Assistant Core</b><br/>- State machine<br/>- Entity/Device/Area regs<br/>- Event bus"]
+
+    A -->|"WebSocket (HA session)"| B
+    B --> C
 ```
 
 ### 4.2 Components
