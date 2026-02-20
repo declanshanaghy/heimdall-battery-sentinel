@@ -5,7 +5,7 @@ epics:
   - id: 1-1
     slug: project-structure
     title: Project Structure Setup
-    status: done
+    status: review
   - id: 1-2
     slug: event-system
     title: Event Subscription System
@@ -35,7 +35,7 @@ epics:
   - id: 3-2
     slug: metadata-enrichment
     title: Metadata Enrichment
-    status: backlog
+    status: ready-for-dev
 - id: 4
   title: Frontend UI
   stories:
