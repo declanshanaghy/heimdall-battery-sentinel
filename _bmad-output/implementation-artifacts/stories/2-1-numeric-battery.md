@@ -1,29 +1,29 @@
-# Story 2.1: Numeric Battery Display
+# Story 2-1: Numeric Battery Evaluation
 
-## As a User
-I want to see my device's battery level as a numeric percentage
-So that I can accurately monitor my remaining battery life
+## Purpose
+Implement core battery monitoring for numeric battery entities meeting Home Assistant integration standards. This story focuses on detecting low battery levels for entities that report percentage values, excluding mobile device batteries. The implementation will provide server-side paging and sorting capabilities.
 
 ## Acceptance Criteria
-1. Battery percentage should be displayed next to the battery icon
-2. Percentage should update automatically when battery level changes
-3. Color should change based on battery level (green >30%, yellow 10-30%, red <10%)
+- ✅ Monitor entities with device_class=battery AND unit_of_measurement='%'
+- ✅ Default threshold at 15% (configurable)
+- ✅ Display battery level as rounded integer with '%' sign (e.g., 14.7% → 15%)
+- ✅ For devices with multiple battery entities, select the first by entity_id ascending
+- ✅ Server-side paging/sorting of battery entities with page size=100
+- ❌ Exclude mobile device batteries (BatteryManager API)
+- ❌ Handle entities without unit_of_measurement or with non-percentage units
 
-## Diagrams
-```mermaid
-flowchart TD
-    A[Get Battery Level] --> B(Format as Percentage)
-    B --> C[Display Numeric Value]
-    C --> D{Is Level <10%?}
-    D -->|Yes| E[Show Red Text]
-    D -->|No| F{Is Level <30%?}
-    F -->|Yes| G[Show Yellow Text]
-    F -->|No| H[Show Green Text]
-```
+## Dev Notes
+- Threshold will be stored in config entry options (constant for now)
+- Use device registry to resolve one battery per device
+- Battery evaluation: 
+  - Parse state as number 
+  - Check unit_of_measurement == "%"
+  - Include if value <= threshold
+- Display rounded integer value with '%' suffix
+- Server-side sorting required for large datasets (FR-SORT-006)
 
-## Technical Specifications
-- Implement using `BatteryManager` API
-- Update interval: 60 seconds
-- Format: XX% (e.g., 85%)
-- Font: System default monospace
-- Positioning: Right-aligned next to battery icon
+### References
+- Source: epics.md#2.1
+- Source: prd.md#FR-LB-004,FR-LB-005,FR-LB-006
+- Source: architecture.md#ADR-005
+- Source: architecture.md#ADR-004 (server-side sorting)
