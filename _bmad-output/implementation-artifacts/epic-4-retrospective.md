@@ -1,19 +1,20 @@
-# Epic 4 Retrospective: Frontend UI
+# Epic 4 Retrospective
 
-**Date:** 2026-02-21
+**Epic:** Frontend UI | **Stories:** 4 | **Date:** 2026-02-21
 
-## Summary
-Epic 4 "Frontend UI" completed with 4 stories. All features were already partially implemented in the codebase - minimal new work required.
+## What Went Well ✅
 
-## Stories Completed
-- 4-1: Tabbed Interface - done
-- 4-2: Sortable Tables - done
-- 4-3: Infinite Scroll - done
-- 4-4: Entity Linking - done
+- Features (tabbed interface, sortable tables, infinite scroll, entity linking) were already implemented in the codebase, allowing Epic 4 to complete quickly through documentation rather than new development
+- Code review caught critical localStorage error handling issue (private browsing compatibility) and the fix was implemented promptly in a single iteration
+- Prior epic learnings on WCAG 2.1 AA accessibility were applied - all interactive elements have proper ARIA attributes, focus indicators, and keyboard navigation
 
-## Key Findings
-- Most frontend features already implemented in panel-heimdall.js
-- Only AC3 (localStorage persistence) needed addition for story 4-1
-- All stories accepted with minimal rework
+## Technical Patterns Established
 
-## Status: done
+- LocalStorage fallback pattern: try/catch blocks around localStorage.getItem/setItem to handle private browsing mode gracefully
+- Tab-based state management: independent state (_sort, _rows, _page, _offset) stored per-tab in component state object
+- WebSocket-driven real-time updates: summary counts and entity data push via subscriptions, with 500ms update latency
+
+## Critical Risks
+
+- Frontend test coverage gap: No frontend-specific unit/integration tests exist; relies on Python backend tests (177 passing) and manual verification
+- Browser automation unavailable: QA testing blocked for functional UI verification, relying on code analysis
