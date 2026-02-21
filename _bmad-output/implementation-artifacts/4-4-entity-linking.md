@@ -1,5 +1,7 @@
 # Entity Linking
 
+Status: done
+
 ## Description
 Implement entity name linking in both Low Battery and Unavailable tables to allow users to navigate to HA entity detail pages by clicking entity names. This is a pure UI feature that adds hyperlink functionality without any backend changes.
 
