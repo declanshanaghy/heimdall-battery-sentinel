@@ -80,16 +80,6 @@ sequenceDiagram
     WS->>Cache: Recompute for new threshold
     Cache->>Panel: Dataset invalidated
     Panel->>User: Refresh tables
-
-    classDef user fill:#FFD93D,stroke:#FFD93D,color:#000
-    classDef ui fill:#FF6B6B,stroke:#FF6B6B,color:#fff
-    classDef backend fill:#6C63FF,stroke:#6C63FF,color:#fff
-    classDef core fill:#0B8BD9,stroke:#0B8BD9,color:#fff
-    
-    class User user
-    class Panel ui
-    class WS,Cache backend
-    class HA core
 ```
 
 ## 🚀 Quick Start
