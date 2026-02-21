@@ -4,7 +4,7 @@
 - **Id:** 1-1
 - **Size:** 1 day
 - **Epic:** Core Integration Setup (Epic 1)
-- **Status:** in-progress
+- **Status:** review
 
 ## Description
 Initialize the integration structure following Home Assistant custom integration patterns. Creates the foundational project structure with all required directories, files, and configurations to support the battery monitoring and unavailable tracking features.
@@ -76,51 +76,49 @@ None
 ## Dev Agent Record
 
 ### Agent Model Used
-anthropic/claude-sonnet-4-6
+anthropic/claude-haiku-4-5 (subagent for review follow-ups)
 
 ### Debug Log References
-- CRIT-6: Fixed by stubbing `ConfigFlow.__init_subclass__` to accept `domain=` keyword
-- CRIT-5: Misleading sensor state assertions replaced with real integration and unit tests
-- All CRITICAL and HIGH review items from code-review.md addressed
+- Review Continuation: Addressed blocking items from story-acceptance report
+- All tests pass: 97 unit tests, 100% pass rate
+- No regressions detected
 
 ### Completion Notes List
-- **CRIT-1 → models.py**: Implemented `LowBatteryRow`, `UnavailableRow`, `compute_severity`, `sort_low_battery_rows`, `sort_unavailable_rows` with full type hints and serialization
-- **CRIT-2 → evaluator.py**: Implemented `BatteryEvaluator` class + standalone `evaluate_battery_state`/`evaluate_unavailable_state` per ADR-005 rules (numeric % only, textual low only)
-- **CRIT-3 → registry.py**: Implemented `MetadataResolver` with HA entity/device/area registry lookup, caching, and invalidation
-- **CRIT-4 → websocket.py**: Implemented `heimdall/summary`, `heimdall/list`, `heimdall/subscribe` commands with voluptuous schema validation
-- **CRIT-5 → tests/**: Replaced misleading test assertions with 97 real unit/integration tests covering models, evaluator, store, and integration setup
-- **CRIT-6 → __init__.py**: Added `async_setup_entry`, `async_unload_entry`, `hass.data[DOMAIN]` initialization, state_changed event subscription, initial dataset population
-- **HIGH-1 → store.py**: Implemented `HeimdallStore` with in-memory datasets, dataset versioning (ADR-008), pagination, and subscriber push model
-- **HIGH-2 → config_flow.py**: Added full input validation with voluptuous schema, threshold range enforcement (5–100, step 5), options flow for post-setup changes (ADR-007)
-- **HIGH-3 → __init__.py**: `async_setup_entry` + `async_unload_entry` + options update listener
-- **HIGH-4 → www/panel-heimdall.js**: Implemented full ES module panel with tabs, sortable table, infinite scroll, WebSocket client (summary/list/subscribe), event handling, and shadow DOM
-- **HIGH-5 → const.py**: Added all missing constants: `CONF_BATTERY_THRESHOLD`, `CONF_SCAN_INTERVAL`, `DEFAULT_THRESHOLD`, severity constants, WS command names, sort fields, tab names, storage keys
-- **HIGH-6**: All story tasks now backed by actual implementation and passing tests
-- **Tests**: 97 unit tests added across `test_models.py`, `test_evaluator.py`, `test_store.py`, and updated `test_integration_setup.py`; `conftest.py` provides HA stubs for offline testing
-- **pytest.ini**: Added to configure test discovery and asyncio mode
-- **Build**: 97/97 tests pass; no regressions
+- **Review Follow-ups** (Story-Acceptance CHANGES_REQUESTED):
+  - HIGH-1 (manifest.json config_flow): ✓ Added `"config_flow": true` to manifest.json
+  - HIGH-2 (manifest.json integration_type): ✓ Added `"integration_type": "service"` to manifest.json
+  - MED-1 (Dead code): ✓ Removed unused `sort_key_low_battery()` function from models.py (sorting logic in sort_low_battery_rows)
+  - MED-2 (Silent error handling): ✓ Added `_LOGGER.debug()` to evaluator.py when ValueError/TypeError caught during numeric battery parsing
+  - MED-3 (WebSocket connection loss): ✓ Added error boundary with `_showError()` calls in panel-heimdall.js for connection failures
+  - MED-4 (WebSocket timeouts): ✓ Added `_withTimeout()` wrapper (10s) around all WebSocket message promises in panel-heimdall.js
+  - LOW-1 (Test docstrings): ✓ Added docstrings to `_lb()` and `_uv()` helper functions in test_store.py
+  - LOW-2 (JSDoc types): ✓ Added JSDoc-style type annotations to all HeimdallPanel methods and properties in panel-heimdall.js
+- **Test Results**: All 97 existing tests pass with zero regressions
+- **Build Status**: Clean; no linting errors
 
 ### File List
 
 | File | Action | Description |
 |------|--------|-------------|
-| `custom_components/heimdall_battery_sentinel/__init__.py` | Modify | Added `async_setup_entry`, `async_unload_entry`, `hass.data[DOMAIN]` init, event subscriptions, initial dataset population |
-| `custom_components/heimdall_battery_sentinel/const.py` | Modify | Added all missing constants: config keys, defaults, severity levels, WS commands, sort fields, tab names, storage keys |
-| `custom_components/heimdall_battery_sentinel/models.py` | Implement | `LowBatteryRow`, `UnavailableRow`, `compute_severity`, `sort_low_battery_rows`, `sort_unavailable_rows` |
-| `custom_components/heimdall_battery_sentinel/evaluator.py` | Implement | `BatteryEvaluator`, `evaluate_battery_state`, `evaluate_unavailable_state` per ADR-005 |
-| `custom_components/heimdall_battery_sentinel/store.py` | Implement | `HeimdallStore` with dataset versioning, CRUD, pagination, subscriber push (ADR-008) |
-| `custom_components/heimdall_battery_sentinel/registry.py` | Implement | `MetadataResolver` with HA entity/device/area registry lookup and caching (ADR-006) |
-| `custom_components/heimdall_battery_sentinel/websocket.py` | Implement | WebSocket commands: `heimdall/summary`, `heimdall/list`, `heimdall/subscribe` (ADR-003) |
-| `custom_components/heimdall_battery_sentinel/config_flow.py` | Modify | Full input validation, threshold enforcement, `HeimdallOptionsFlow` for ADR-007 |
-| `custom_components/heimdall_battery_sentinel/www/panel-heimdall.js` | Implement | Full ES module: shadow DOM panel, tabs, sortable table, infinite scroll, WebSocket client |
-| `tests/conftest.py` | Create | HA stub modules for offline unit testing; `mock_hass` and `mock_state` fixtures |
-| `tests/test_integration_setup.py` | Modify | Replaced misleading sensor state assertions with real tests for domain, constants, module importability |
-| `tests/test_models.py` | Create | 30 unit tests for models, severity, sorting |
-| `tests/test_evaluator.py` | Create | 34 unit tests for battery evaluation rules (ADR-005) |
-| `tests/test_store.py` | Create | 30 unit tests for store CRUD, pagination, versioning, subscribers |
-| `pytest.ini` | Create | pytest configuration: testpaths, asyncio_mode |
+| `custom_components/heimdall_battery_sentinel/manifest.json` | Modify | Added `"config_flow": true` and `"integration_type": "service"` (HIGH-1, HIGH-2 from code review) |
+| `custom_components/heimdall_battery_sentinel/models.py` | Modify | Removed dead code: `sort_key_low_battery()` function (MED-1 from code review) |
+| `custom_components/heimdall_battery_sentinel/evaluator.py` | Modify | Added error logging when ValueError/TypeError caught during numeric battery parsing (MED-2) |
+| `custom_components/heimdall_battery_sentinel/www/panel-heimdall.js` | Modify | Added JSDoc type annotations, `_withTimeout()` wrapper (10s), error boundaries with `_showError()` for connection loss (MED-3, MED-4, LOW-2) |
+| `tests/test_store.py` | Modify | Added docstrings to `_lb()` and `_uv()` helper functions (LOW-1) |
+| `custom_components/heimdall_battery_sentinel/__init__.py` | Implement | (from original story) Added `async_setup_entry`, `async_unload_entry`, event subscriptions |
+| `custom_components/heimdall_battery_sentinel/const.py` | Implement | (from original story) Added all required constants and metadata |
+| `custom_components/heimdall_battery_sentinel/config_flow.py` | Implement | (from original story) Full input validation and options flow |
+| `custom_components/heimdall_battery_sentinel/registry.py` | Implement | (from original story) `MetadataResolver` with registry lookup and caching |
+| `custom_components/heimdall_battery_sentinel/store.py` | Implement | (from original story) `HeimdallStore` with versioning and pagination |
+| `custom_components/heimdall_battery_sentinel/websocket.py` | Implement | (from original story) WebSocket commands for data retrieval |
+| `tests/conftest.py` | Create | (from original story) HA stub modules for testing |
+| `tests/test_models.py` | Create | (from original story) 30 unit tests for models |
+| `tests/test_evaluator.py` | Create | (from original story) 34 unit tests for battery evaluation |
+| `tests/test_store.py` | Create | (from original story) 30 unit tests for store |
+| `pytest.ini` | Create | (from original story) pytest configuration |
 
 ## Change Log
 - 2026-02-20: Initial story implementation (skeleton only) — CHANGES_REQUESTED
 - 2026-02-20: Review follow-ups addressed — all CRITICAL and HIGH issues resolved; 97 tests pass
 - 2026-02-20: Story Acceptance — CHANGES_REQUESTED (2 blocking items from code review)
+- 2026-02-20: Review follow-ups (blocking + non-blocking) addressed — All manifest.json, code quality, and test documentation improvements complete; 97/97 tests pass; ready for re-review
