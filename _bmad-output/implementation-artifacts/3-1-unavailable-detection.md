@@ -1,7 +1,7 @@
 # Story 3.1: Unavailable Detection
 
 ## Status
-review
+in-progress
 
 ## User Story
 As a Home Assistant user  
@@ -199,6 +199,12 @@ N/A - No issues encountered. Feature already implemented in Epic 1.2 and verifie
 | `tests/test_store.py` | Verify | Contains CRUD and versioning tests for unavailable dataset operations |
 
 ## Change Log
+- 2026-02-21 02:50 PST: Story Acceptance — CHANGES_REQUESTED (5 blocking items)
+  - Code Review: CHANGES_REQUESTED (3 CRITICAL, 2 HIGH issues)
+  - QA Tester: ACCEPTED (no bugs found)
+  - UX Review: ACCEPTED (no issues)
+  - Blocking issue: AC4 violation - dataset versioning not incremented on incremental operations (upsert/remove)
+  - Status: review → in-progress
 - 2026-02-21 02:43 PST: Story 3-1 implementation verified
   - Feature implemented as part of Epic 1.2 (Event Subscription System)
   - All acceptance criteria verified with 148 passing tests
