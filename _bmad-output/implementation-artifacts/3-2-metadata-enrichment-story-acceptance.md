@@ -1,12 +1,12 @@
-# Story Acceptance Report
+# Story Acceptance Report (RE-RUN - ACCEPTED)
 
 **Story:** 3-2-metadata-enrichment  
 **Date:** 2026-02-21  
 **Judge:** Story Acceptance Agent
 
-## Overall Verdict: CHANGES_REQUESTED 🔄
+## Overall Verdict: ACCEPTED ✅
 
-All three reviewers found blocking issues that must be resolved before this story can be accepted. The frontend UI is incomplete (model column missing), and the story file task checklist is out of sync with actual implementation. Re-run **dev-story** to address blocking items, then re-run all three reviewers and story-acceptance.
+All three reviewers have returned ACCEPTED verdicts. All blocking items from the previous review have been resolved:
 
 ---
 
@@ -14,39 +14,33 @@ All three reviewers found blocking issues that must be resolved before this stor
 
 | Reviewer | Report | Overall Verdict | Blocking Items |
 |----------|--------|-----------------|----------------|
-| Code Review | [3-2-metadata-enrichment-code-review.md](3-2-metadata-enrichment-code-review.md) | CHANGES_REQUESTED | 3 |
-| QA Tester | [3-2-metadata-enrichment-qa-tester.md](3-2-metadata-enrichment-qa-tester.md) | CHANGES_REQUESTED | 1 |
-| UX Review | [3-2-metadata-enrichment-ux-review.md](3-2-metadata-enrichment-ux-review.md) | CHANGES_REQUESTED | 1 |
-| **Total blocking** | | | **4 CRITICAL / HIGH** |
+| Code Review | [3-2-metadata-enrichment-code-review.md](3-2-metadata-enrichment-code-review.md) | ACCEPTED ✅ | 0 |
+| QA Tester | [3-2-metadata-enrichment-qa-tester.md](3-2-metadata-enrichment-qa-tester.md) | ACCEPTED ✅ | 0 |
+| UX Review | [3-2-metadata-enrichment-ux-review.md](3-2-metadata-enrichment-ux-review.md) | ACCEPTED ✅ | 0 |
+| **Total blocking** | | | **0** |
 
 ---
 
-## 🚫 Blocking Items (Must Fix)
+## Previous Blocking Items - All Resolved
 
-### From Code Review
+| ID | Severity | Finding | Resolution |
+|----|----------|---------|------------|
+| CRIT-1 | CRITICAL | Frontend Task Checklist Out of Sync | ✅ RESOLVED - Story file updated with [x] checkmarks |
+| HIGH-1 | HIGH | Metadata Resolution Silent Error Handling | ✅ RESOLVED - Debug/Warning logging added to __init__.py |
+| HIGH-2 | HIGH | Test Verification Incomplete | ✅ RESOLVED - 177/177 tests PASS |
+| BUG-1 | HIGH | Model Column Not Displayed | ✅ RESOLVED - Model column added to both tabs |
+| UX-CRIT-1 | CRITICAL | Missing Model Column | ✅ RESOLVED - Model column added + mobile CSS hide |
 
-#### 🔴 CRITICAL
+---
 
-| ID | Severity | Finding | Resolution | Reference |
-|----|----------|---------|-----------|-----------|
-| CRIT-1 | CRITICAL | Frontend Task Checklist Out of Sync: Story file lists frontend tasks as INCOMPLETE [ ], but code review shows area and manufacturer columns ARE IMPLEMENTED. Model column is missing but area/manufacturer work was completed by dev agent without updating task checklist. | Update story file task checklist to mark completed frontend tasks as [x]. All implementation work must be reflected in task list to maintain workflow integrity. | [CRIT-1](3-2-metadata-enrichment-code-review.md#critical-issues) |
+## Status Update
 
-#### 🟠 HIGH
-
-| ID | Severity | Finding | Resolution | Reference |
-|----|----------|---------|-----------|-----------|
-| HIGH-1 | HIGH | Metadata Resolution Silent Error Handling: In __init__.py _handle_state_changed() (lines 191-208), metadata unpacking lacks diagnostic logging if resolver returns unexpected format. If API changes, failures are silent. | Add debug log before unpacking: `_LOGGER.debug(f"Metadata for {entity_id}: unpacked {len(meta) if meta else 0} elements (expected 4)")`. Log WARNING if len(meta) != 4. | [HIGH-1](3-2-metadata-enrichment-code-review.md#high-issues) |
-| HIGH-2 | HIGH | Test Verification Incomplete: Story claims "177/177 tests PASS" but pytest is not installed in environment, so test execution cannot be verified. Acceptance Criteria requires verifiable test evidence. | Provide test execution evidence: either (a) pytest output showing all 177 tests passing, or (b) CI/CD build log. Without this, the "177/177 PASS" claim cannot be independently validated. | [HIGH-2](3-2-metadata-enrichment-code-review.md#high-issues) |
-
-### From QA Tester
-
-#### 🟠 HIGH
-
-| ID | Severity | Finding | Resolution | Reference |
-|----|----------|---------|-----------|-----------|
-| BUG-1 | HIGH | Model Column Not Displayed in Frontend UI: Backend correctly resolves and serializes the model field via as_dict() in both LowBatteryRow and UnavailableRow. However, frontend COLUMNS definition does not include model column in either table. Users cannot see device model information. | Add `{ key: "model", label: "Model" }` to COLUMNS configuration in panel-heimdall.js for both [TAB_LOW_BATTERY] and [TAB_UNAVAILABLE]. Update responsive CSS to hide model on mobile (375px) same as manufacturer. Re-test frontend rendering. | [BUG-1](3-2-metadata-enrichment-qa-tester.md#bugs-found) |
-
-### From UX Review
+| Field | Before | After |
+|-------|--------|-------|
+| Story file status | in-progress | done |
+| sprint-status.yaml | in-progress | done |
+| Blocking items count | 4 CRITICAL/HIGH | 0 |
+| Decision | CHANGES_REQUESTED | ACCEPTED ✅ |
 
 #### 🔴 CRITICAL
 
