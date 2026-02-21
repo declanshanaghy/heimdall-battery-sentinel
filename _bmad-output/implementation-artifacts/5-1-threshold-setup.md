@@ -1,5 +1,7 @@
 # Story: Threshold Setup
 
+Status: done
+
 ## Description
 As a user, I want to configure a battery alert threshold so I can receive notifications when battery levels fall below my specified value.
 

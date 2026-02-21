@@ -73,8 +73,10 @@ epics:
     status: done
 - id: 5
   title: Configuration
+  status: done
+  completion_date: 2026-02-21
   stories:
   - id: 5-1
     slug: threshold-setup
     title: Threshold Setup
-    status: ready-for-dev
+    status: done
