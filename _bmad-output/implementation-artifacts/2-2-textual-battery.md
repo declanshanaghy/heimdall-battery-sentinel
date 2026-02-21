@@ -1,6 +1,6 @@
 # Story 2.2: Textual Battery Monitoring
 
-Status: review
+Status: done
 
 ## Story
 As a Home Assistant user,
@@ -93,5 +93,6 @@ N/A - No issues encountered. All implementation was already complete from story 
 | `custom_components/heimdall_battery_sentinel/www/panel-heimdall.js` | No Change | Frontend already renders textual battery displays correctly |
 
 ## Change Log
+- 2026-02-21: Story Acceptance — ACCEPTED (0 blocking items, all reviewers passed)
 - 2026-02-21: Story implementation and AC validation complete - All textual battery features implemented from story 2-1, validation tests added for story 2-2
 - 2026-02-20: Story created from Epic 2
