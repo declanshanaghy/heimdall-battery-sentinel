@@ -280,6 +280,13 @@
       this._shadow.innerHTML = `
         <style>
           :host { display: block; padding: 16px; font-family: var(--paper-font-body1_-_font-family, sans-serif); }
+          
+          /* Typography Design Tokens */
+          --typography-h6: { font-size: 20px; font-weight: 600; line-height: 1.3; };
+          --typography-subtitle1: { font-size: 16px; font-weight: 500; line-height: 1.4; };
+          --typography-body1: { font-size: 14px; font-weight: 400; line-height: 1.5; };
+          --typography-caption: { font-size: 12px; font-weight: 400; line-height: 1.4; };
+
           .tabs { display: flex; gap: 8px; margin-bottom: 16px; }
           .tab-btn {
             padding: 8px 16px;
@@ -288,20 +295,98 @@
             cursor: pointer;
             background: var(--secondary-background-color, #f0f0f0);
             font-size: 14px;
+            font-weight: 400;
+          }
+          .tab-btn:focus-visible {
+            outline: 2px solid var(--primary-color, #03a9f4);
+            outline-offset: 2px;
           }
           .tab-btn.active { background: var(--primary-color, #03a9f4); color: white; }
-          table { width: 100%; border-collapse: collapse; }
-          th, td { padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--divider-color, #e0e0e0); }
-          th { cursor: pointer; user-select: none; font-weight: 600; background: var(--table-header-background-color, #fafafa); }
+          
+          table {
+            width: 100%;
+            border-collapse: collapse;
+          }
+          th, td {
+            padding: 8px 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--divider-color, #e0e0e0);
+          }
+          th {
+            cursor: pointer;
+            user-select: none;
+            font-weight: 600;
+            font-size: 14px;
+            background: var(--table-header-background-color, #fafafa);
+          }
           th:hover { background: var(--secondary-background-color, #f0f0f0); }
-          .sort-icon { margin-left: 4px; font-size: 10px; }
-          a { color: var(--primary-color, #03a9f4); text-decoration: none; }
+          th:focus-visible {
+            outline: 2px solid var(--primary-color, #03a9f4);
+            outline-offset: -2px;
+          }
+          
+          .sort-icon {
+            margin-left: 4px;
+            font-size: 13px;
+            font-weight: bold;
+          }
+          
+          a {
+            color: var(--primary-color, #03a9f4);
+            text-decoration: none;
+          }
           a:hover { text-decoration: underline; }
-          .severity-red { color: #d32f2f; }
-          .severity-orange { color: #f57c00; }
-          .severity-yellow { color: #fbc02d; }
-          .loading { text-align: center; padding: 24px; color: var(--secondary-text-color, #888); }
-          .end-message { text-align: center; padding: 8px; color: var(--secondary-text-color, #888); font-size: 12px; }
+          a:focus-visible {
+            outline: 2px solid var(--primary-color, #03a9f4);
+            outline-offset: 2px;
+          }
+          
+          /* Severity Colors — Updated to Match Spec */
+          .severity-red { color: #F44336; font-weight: 500; }
+          .severity-orange { color: #FF9800; font-weight: 500; }
+          .severity-yellow { color: #FFEB3B; font-weight: 500; }
+          
+          .loading {
+            text-align: center;
+            padding: 24px;
+            color: var(--secondary-text-color, #888);
+            font-size: 14px;
+          }
+          .end-message {
+            text-align: center;
+            padding: 8px;
+            color: var(--secondary-text-color, #888);
+            font-size: 12px;
+          }
+          
+          /* Responsive Design — Tablet (768px) */
+          @media (max-width: 768px) {
+            th[data-col="area"],
+            th[data-col="manufacturer"],
+            td.hidden-tablet {
+              display: none;
+            }
+          }
+          
+          /* Responsive Design — Mobile (375px) */
+          @media (max-width: 375px) {
+            :host { padding: 12px; }
+            table { font-size: 12px; }
+            th, td { padding: 6px 8px; }
+            th[data-col="area"],
+            th[data-col="manufacturer"],
+            th[data-col="updated_at"],
+            td.hidden-mobile {
+              display: none;
+            }
+            .sort-icon { font-size: 11px; }
+          }
+          
+          /* Reduced Motion Support */
+          @media (prefers-reduced-motion: reduce) {
+            * { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+          }
+          
           #sentinel { height: 1px; }
         </style>
         <div class="tabs" id="tab-bar"></div>
@@ -341,46 +426,66 @@
       const rows = this._rows[tab];
       const sort = this._sort[tab];
 
+      // Build table headers with ARIA attributes
       const headerRow = cols
         .map((col) => {
           const isActive = sort.by === col.key;
+          const ariaSort = isActive ? (sort.dir === "asc" ? "ascending" : "descending") : "none";
           const icon = isActive ? (sort.dir === "asc" ? "▲" : "▼") : "";
-          return `<th data-col="${col.key}">${col.label}<span class="sort-icon">${icon}</span></th>`;
+          const sortLabel = isActive ? `${col.label}, currently sorted ${sort.dir === "asc" ? "ascending" : "descending"}` : `Sort by ${col.label}`;
+          return `<th data-col="${col.key}" aria-sort="${ariaSort}" role="columnheader" tabindex="0" aria-label="${this._esc(sortLabel)}">${col.label}<span class="sort-icon" aria-hidden="true">${icon}</span></th>`;
         })
         .join("");
 
       const bodyRows = rows
         .map((row) => {
           const cells = cols.map((col) => {
+            const isMobileHidden = ["area", "manufacturer", "updated_at"].includes(col.key);
+            const mobileClass = isMobileHidden ? "hidden-mobile" : "";
+            const isTabletHidden = ["manufacturer"].includes(col.key);
+            const tabletClass = isTabletHidden ? "hidden-tablet" : "";
+            const className = `${mobileClass} ${tabletClass}`.trim();
+
             if (col.key === "friendly_name") {
               const href = `/config/entities/entity/${row.entity_id}`;
-              return `<td><a href="${href}" target="_blank">${this._esc(row.friendly_name || row.entity_id)}</a></td>`;
+              return `<td class="${className}"><a href="${href}" target="_blank">${this._esc(row.friendly_name || row.entity_id)}</a></td>`;
             }
             if (col.key === "battery_level") {
               const sevClass = row.severity ? `severity-${row.severity}` : "";
-              return `<td class="${sevClass}">${this._esc(row.battery_display || "")}</td>`;
+              return `<td class="${sevClass} ${className}">${this._esc(row.battery_display || "")}</td>`;
             }
             if (col.key === "updated_at" && row.updated_at) {
-              return `<td>${new Date(row.updated_at).toLocaleString()}</td>`;
+              return `<td class="${className}">${new Date(row.updated_at).toLocaleString()}</td>`;
             }
-            return `<td>${this._esc(row[col.key] || "")}</td>`;
+            return `<td class="${className}">${this._esc(row[col.key] || "")}</td>`;
           });
           return `<tr>${cells.join("")}</tr>`;
         })
         .join("");
 
+      const tableLabel = tab === TAB_LOW_BATTERY 
+        ? "Low battery entities table, sortable" 
+        : "Unavailable entities table, sortable";
+
       container.innerHTML = `
-        <table>
+        <table aria-label="${this._esc(tableLabel)}" role="grid">
           <thead><tr>${headerRow}</tr></thead>
           <tbody>${bodyRows}</tbody>
         </table>
-        ${this._loading ? '<div class="loading">Loading…</div>' : ""}
-        ${this._end[tab] && rows.length > 0 ? '<div class="end-message">All entities loaded</div>' : ""}
+        ${this._loading ? '<div class="loading" role="status" aria-live="polite" aria-atomic="true">Loading…</div>' : ""}
+        ${this._end[tab] && rows.length > 0 ? '<div class="end-message" role="status" aria-live="polite">All entities loaded</div>' : ""}
       `;
 
-      // Attach sort click handlers
+      // Attach sort click handlers to table headers
       container.querySelectorAll("th[data-col]").forEach((th) => {
         th.addEventListener("click", () => this._onSortClick(th.dataset.col));
+        // Allow keyboard navigation (Enter/Space)
+        th.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            this._onSortClick(th.dataset.col);
+          }
+        });
       });
     }
 
