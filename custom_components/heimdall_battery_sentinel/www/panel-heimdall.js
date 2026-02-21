@@ -70,7 +70,12 @@
 
       // UI state
       /** @type {string} Currently active tab ("low_battery" or "unavailable"). */
-      this._activeTab = (localStorage.getItem(STORAGE_KEY) === TAB_UNAVAILABLE) ? TAB_UNAVAILABLE : TAB_LOW_BATTERY;
+      try {
+        this._activeTab = (localStorage.getItem(STORAGE_KEY) === TAB_UNAVAILABLE) ? TAB_UNAVAILABLE : TAB_LOW_BATTERY;
+      } catch (e) {
+        // Private browsing mode or localStorage unavailable
+        this._activeTab = TAB_LOW_BATTERY;
+      }
       /** @type {Object} Summary data: low_battery_count, unavailable_count, threshold. */
       this._summary = { low_battery_count: 0, unavailable_count: 0, threshold: 15 };
       /** @type {Object<string, Array>} Cached rows by tab. */
@@ -541,7 +546,11 @@
     _switchTab(tab) {
       if (tab === this._activeTab) return;
       this._activeTab = tab;
-      localStorage.setItem(STORAGE_KEY, tab);
+      try {
+        localStorage.setItem(STORAGE_KEY, tab);
+      } catch (e) {
+        // Private browsing mode or localStorage unavailable - silently fail
+      }
       this._renderTabs();
       this._renderTable();
       // Load first page if not loaded yet
