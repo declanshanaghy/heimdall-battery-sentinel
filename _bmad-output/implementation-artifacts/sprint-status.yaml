@@ -50,6 +50,10 @@ epics:
     status: done
 - id: 4
   title: Frontend UI
+  status: done
+  retrospective: epic-4-retrospective.md
+  completion_date: 2026-02-21
+  retrospective_date: 2026-02-21
   stories:
   - id: 4-1
     slug: tabbed-interface
