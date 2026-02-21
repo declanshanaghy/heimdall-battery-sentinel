@@ -24,7 +24,6 @@
 
   const TAB_LOW_BATTERY = "low_battery";
   const TAB_UNAVAILABLE = "unavailable";
-  const LOCAL_STORAGE_KEY = "heimdall_panel_active_tab";
   const STORAGE_KEY = "heimdall_active_tab";
 
   const DEFAULT_SORT = {

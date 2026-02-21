@@ -318,6 +318,78 @@
     }
   });
 
+  // ── Test: Tab Persistence (AC3) ───────────────────────────────────────────
+
+  test("AC3-1: Tab state is saved to localStorage on switch", async () => {
+    // Clear localStorage first
+    localStorage.removeItem("heimdall_active_tab");
+    
+    const panel = document.createElement("heimdall-panel");
+    document.body.appendChild(panel);
+    
+    // Switch to unavailable tab
+    panel._switchTab("unavailable");
+    
+    // Check localStorage was updated
+    const savedTab = localStorage.getItem("heimdall_active_tab");
+    assertEqual(savedTab, "unavailable", "Tab selection should be saved to localStorage");
+    
+    panel.remove();
+  });
+
+  test("AC3-2: Tab state is restored from localStorage on init", async () => {
+    // Set localStorage to unavailable
+    localStorage.setItem("heimdall_active_tab", "unavailable");
+    
+    const panel = document.createElement("heimdall-panel");
+    document.body.appendChild(panel);
+    
+    // Check the active tab was restored
+    assertEqual(panel._activeTab, "unavailable", "Active tab should be restored from localStorage");
+    
+    // Clean up
+    localStorage.removeItem("heimdall_active_tab");
+    panel.remove();
+  });
+
+  test("AC3-3: Default tab is Low Battery when no localStorage", () => {
+    // Ensure no localStorage
+    localStorage.removeItem("heimdall_active_tab");
+    
+    const panel = document.createElement("heimdall-panel");
+    document.body.appendChild(panel);
+    
+    assertEqual(panel._activeTab, "low_battery", "Default tab should be low_battery");
+    
+    panel.remove();
+  });
+
+  test("AC3-4: Tab buttons show correct active state visually", async () => {
+    const panel = document.createElement("heimdall-panel");
+    panel.hass = createMockHass();
+    document.body.appendChild(panel);
+    
+    await new Promise(r => setTimeout(r, 100));
+    
+    // Find both tab buttons
+    const buttons = panel.shadowRoot.querySelectorAll(".tab-btn");
+    assertEqual(buttons.length, 2, "Should have two tab buttons");
+    
+    // First tab (Low Battery) should be active by default
+    assert(buttons[0].classList.contains("active"), "First tab should have active class");
+    assert(!buttons[1].classList.contains("active"), "Second tab should not have active class");
+    
+    // Switch to second tab
+    panel._switchTab("unavailable");
+    
+    // Now second tab should be active
+    const buttonsAfter = panel.shadowRoot.querySelectorAll(".tab-btn");
+    assert(!buttonsAfter[0].classList.contains("active"), "First tab should not have active class after switch");
+    assert(buttonsAfter[1].classList.contains("active"), "Second tab should have active class after switch");
+    
+    panel.remove();
+  });
+
   // ── Run Tests ────────────────────────────────────────────────────────────────
 
   async function runTests() {

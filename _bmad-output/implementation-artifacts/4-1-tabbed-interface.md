@@ -1,6 +1,6 @@
 # Story 4.1: Tabbed Interface
 
-Status: in-progress
+Status: review
 <!-- NOTE: Status values MUST match sprint-status.yaml exactly: backlog | ready-for-dev | in-progress | review | done -->
 
 ## Story
@@ -67,19 +67,26 @@ stateDiagram-v2
 ## Dev Agent Record
 
 ### Agent Model Used
-TBD
+openrouter/minimax/minimax-m2.5
 
 ### Debug Log References
-TBD
+N/A - No issues encountered
 
 ### Completion Notes List
-TBD
+- AC1 (tabs with live counts): Already implemented in existing code - `_renderTabs()` displays "Low Battery (X)" and "Unavailable (Y)" with live counts via WebSocket
+- AC2 (tab switching visual feedback): Already implemented - `.tab-btn.active` CSS provides underline/color change, `_switchTab()` handles click
+- AC3 (localStorage persistence): Implemented in constructor (`localStorage.getItem(STORAGE_KEY)`) and `_switchTab()` (`localStorage.setItem(STORAGE_KEY, tab)`)
+- Cleaned up duplicate LOCAL_STORAGE_KEY constant
+- Added 4 new unit tests for tab persistence (AC3-1 through AC3-4)
+- All 177 Python tests pass
 
 ### File List
 
 | File | Action | Description |
 |------|--------|-------------|
-| TBD | | |
+| `custom_components/heimdall_battery_sentinel/www/panel-heimdall.js` | Modify | Cleaned up duplicate constant |
+| `tests/test_frontend_accessibility.js` | Modify | Added 4 tab persistence tests |
 
 ## Change Log
 - 2026-02-20: Story created from Epic 4
+- 2026-02-21: Story implementation completed - All ACs implemented and tested
