@@ -348,3 +348,106 @@ class TestBatteryEvaluator:
         low_battery, _ = evaluator.batch_evaluate(states, metadata_fn=meta_fn)
         assert low_battery[0].manufacturer == "Acme"
         assert low_battery[0].area == "Bedroom"
+
+
+# ── Story 2.2: Textual Battery Monitoring (AC Validation) ──────────────────
+
+class TestStory22TextualBatteryAC:
+    """Comprehensive AC validation for Story 2.2: Textual Battery Monitoring.
+    
+    AC1: Only include textual battery entities with state=='low'
+    AC2: Exclude medium/high textual states
+    AC3: Display 'low' state label consistently
+    AC4: Apply proper color coding per severity rules
+    AC5: Maintain server-side sorting functionality
+    """
+
+    # AC1: Only include textual battery entities with state=='low'
+    def test_ac1_textual_low_only(self):
+        """AC1: Only textual 'low' batteries are included."""
+        evaluator = BatteryEvaluator(threshold=15)
+        states = [
+            _battery_state("sensor.textual_low", "low", unit=None),
+        ]
+        low_battery, _ = evaluator.batch_evaluate(states)
+        assert len(low_battery) == 1
+        assert low_battery[0].battery_display == "low"
+
+    # AC2: Exclude medium/high textual states
+    def test_ac2_exclude_medium(self):
+        """AC2: Textual 'medium' batteries are excluded."""
+        evaluator = BatteryEvaluator(threshold=15)
+        states = [
+            _battery_state("sensor.textual_medium", "medium", unit=None),
+        ]
+        low_battery, _ = evaluator.batch_evaluate(states)
+        assert len(low_battery) == 0
+
+    def test_ac2_exclude_high(self):
+        """AC2: Textual 'high' batteries are excluded."""
+        evaluator = BatteryEvaluator(threshold=15)
+        states = [
+            _battery_state("sensor.textual_high", "high", unit=None),
+        ]
+        low_battery, _ = evaluator.batch_evaluate(states)
+        assert len(low_battery) == 0
+
+    # AC3: Display 'low' state label consistently
+    def test_ac3_textual_low_display_label(self):
+        """AC3: Textual 'low' battery displays as 'low' label."""
+        state = _battery_state("sensor.t1", "low", unit=None, friendly_name="Device 1")
+        row = evaluate_battery_state(state, threshold=15)
+        assert row is not None
+        assert row.battery_display == "low"
+        assert row.battery_numeric is None
+
+    def test_ac3_case_insensitive_display(self):
+        """AC3: Case-insensitive input normalizes to 'low' label."""
+        state = _battery_state("sensor.t2", "LOW", unit=None, friendly_name="Device 2")
+        row = evaluate_battery_state(state, threshold=15)
+        assert row is not None
+        assert row.battery_display == "low"
+
+    # AC4: Apply proper color coding per severity rules
+    def test_ac4_textual_no_severity_coloring(self):
+        """AC4: Textual 'low' has no severity color (severity=None)."""
+        state = _battery_state("sensor.t3", "low", unit=None)
+        row = evaluate_battery_state(state, threshold=15)
+        assert row is not None
+        assert row.severity is None  # Textual has no numeric severity
+
+    def test_ac4_numeric_has_severity_coloring(self):
+        """AC4: Numeric batteries have severity coloring, textual do not."""
+        evaluator = BatteryEvaluator(threshold=15)
+        
+        numeric_state = _battery_state("sensor.num", "10", unit="%")
+        numeric_row = evaluator.evaluate_low_battery(numeric_state)
+        assert numeric_row is not None
+        assert numeric_row.severity in {SEVERITY_RED, SEVERITY_ORANGE, SEVERITY_YELLOW}
+        
+        textual_state = _battery_state("sensor.text", "low", unit=None)
+        textual_row = evaluator.evaluate_low_battery(textual_state)
+        assert textual_row is not None
+        assert textual_row.severity is None
+
+    # AC5: Maintain server-side sorting functionality
+    def test_ac5_sorting_textual_with_numeric(self):
+        """AC5: Sorting works correctly when mixing numeric and textual batteries."""
+        evaluator = BatteryEvaluator(threshold=15)
+        
+        states = [
+            _battery_state("sensor.t1", "low", unit=None, friendly_name="Textual Device"),
+            _battery_state("sensor.n1", "10", unit="%", friendly_name="Numeric Device"),
+        ]
+        low_battery, _ = evaluator.batch_evaluate(states)
+        
+        # Both should be in results (10% is below 15% threshold)
+        assert len(low_battery) == 2
+        
+        # Verify they can be sorted without errors
+        from custom_components.heimdall_battery_sentinel.models import sort_low_battery_rows
+        sorted_rows = sort_low_battery_rows(low_battery, "battery_level", "asc")
+        assert len(sorted_rows) == 2
+        # Numeric sorts first, textual last
+        assert sorted_rows[0].battery_numeric == 10.0
+        assert sorted_rows[1].battery_numeric is None

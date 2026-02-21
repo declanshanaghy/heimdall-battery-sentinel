@@ -24,7 +24,7 @@ epics:
   - id: 2-2
     slug: textual-battery
     title: Textual Battery Handling
-    status: ready-for-dev
+    status: review
   - id: 2-3
     slug: severity-calculation
     title: Severity Calculation
