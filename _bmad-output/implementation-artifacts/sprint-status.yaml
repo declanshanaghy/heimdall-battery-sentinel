@@ -1,9 +1,10 @@
 epics:
 - id: 1
   title: Core Integration Setup
-  status: completed
+  status: done
   retrospective: epic-1-retrospective.md
   completion_date: 2026-02-20
+  retrospective_date: 2026-02-21
   stories:
   - id: 1-1
     slug: project-structure
