@@ -1,6 +1,6 @@
 # Story 4.1: Tabbed Interface
 
-Status: review
+Status: done
 <!-- NOTE: Status values MUST match sprint-status.yaml exactly: backlog | ready-for-dev | in-progress | review | done -->
 
 ## Story
@@ -90,3 +90,4 @@ N/A - No issues encountered
 ## Change Log
 - 2026-02-20: Story created from Epic 4
 - 2026-02-21: Story implementation completed - All ACs implemented and tested
+- 2026-02-21: Story Acceptance — ACCEPTED
