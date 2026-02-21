@@ -91,6 +91,11 @@ anthropic/claude-haiku-4-5
   - Subscriber notification on dataset changes
   - Graceful error handling with logging
 - **Build status**: ✓ Python syntax valid, all imports resolve correctly
+- **Code Review Follow-up (2026-02-20 22:52 PST)**: ✓ Test infrastructure fixed
+  - Created `custom_components/__init__.py` to make package discoverable for test imports
+  - Added `pythonpath = .` to pytest.ini to configure pytest for custom_components imports
+  - Verified all 109 tests pass (from CRITICAL-1 and HIGH-2 blockers resolved)
+  - Committed fix with message: "Fix test infrastructure: add package init and pytest config"
 
 ### File List
 
@@ -98,11 +103,14 @@ anthropic/claude-haiku-4-5
 |------|--------|-------------|
 | `custom_components/heimdall_battery_sentinel/__init__.py` | Implemented (Story 1-1) | Event subscription via `hass.bus.async_listen("state_changed", ...)` and initial population |
 | `tests/test_event_subscription.py` | Create | 12 comprehensive tests for event subscription system |
+| `custom_components/__init__.py` | Create (Code Review Follow-up) | Package marker for test import discovery |
+| `pytest.ini` | Modify (Code Review Follow-up) | Added `pythonpath = .` to configure pytest for custom_components imports |
 
 ## Change Log
 - 2026-02-20: Initial story implementation (framework only) — placeholder RabbitMQ content
 - 2026-02-20: Story completion — comprehensive event subscription tests added and passing (109/109)
 - 2026-02-20: Story updated — proper documentation reflecting actual HA event system implementation
+- 2026-02-20 22:52 PST: Code review follow-up — fixed test infrastructure (CRITICAL-1, HIGH-2 blockers resolved). Created custom_components/__init__.py and added pythonpath to pytest.ini. Verified 109/109 tests PASS. Committed fix.
 
 ## Status: REVIEW
 
