@@ -16,39 +16,29 @@ else
     exit 1
 fi
 
-HA_URL="${DEV_SERVER_URL:-http://homeassistant.lan:8123}"
-HA_USER="$HOME_ASSISTANT_USERNAME"
-HA_PASS="$HOME_ASSISTANT_PASSWORD"
+HA_URL="${HOME_ASSISTANT_URL:-http://homeassistant.lan:8123}"
+HA_TOKEN="$HOME_ASSISTANT_TOKEN"
+HA_HOST="${HOME_ASSISTANT_HOST:-homeassistant}"
+HA_PORT="${HOME_ASSISTANT_PORT:-2222}"
+HA_USER="${HOME_ASSISTANT_SSH_USER:-root}"
+HA_PATH="${HOME_ASSISTANT_CONFIG_PATH:-/root/homeassistant}"
+
 INTEGRATION_NAME="heimdall_battery_sentinel"
 INTEGRATION_PATH="custom_components/$INTEGRATION_NAME"
 
-echo "=== Heimdall Battery Sentinel Deployment ==="
-echo "HA URL: $HA_URL"
-echo "User: $HA_USER"
-echo ""
+# Strip quotes if present
+HA_TOKEN="${HA_TOKEN//\"/}"
 
-# Function to get auth token
-get_auth_token() {
-    response=$(curl -s -X POST "$HA_URL/api/login" \
-        -H "Content-Type: application/json" \
-        -d "{\"username\": \"$HA_USER\", \"password\": \"$HA_PASS\"}")
-    
-    token=$(echo "$response" | python3 -c "import sys, json; print(json.load(sys.stdin).get('token', ''))" 2>/dev/null)
-    
-    if [ -z "$token" ]; then
-        echo "Error: Failed to get auth token"
-        echo "Response: $response"
-        exit 1
-    fi
-    
-    echo "$token"
-}
+echo "=== Heimdall Battery Sentinel Deployment ==="
+echo "HA Host: $HA_HOST:$HA_PORT"
+echo "HA Config Path: $HA_PATH"
+echo "HA URL: $HA_URL"
+echo ""
 
 # Function to check if integration is installed
 check_integration() {
-    local token="$1"
     result=$(curl -s -X GET "$HA_URL/api/config_entries" \
-        -H "Authorization: Bearer $token" \
+        -H "Authorization: Bearer $HA_TOKEN" \
         -H "Content-Type: application/json")
     
     if echo "$result" | grep -q "$INTEGRATION_NAME"; then
@@ -60,9 +50,8 @@ check_integration() {
 
 # Function to get config entry ID
 get_config_entry_id() {
-    local token="$1"
     result=$(curl -s -X GET "$HA_URL/api/config_entries" \
-        -H "Authorization: Bearer $token" \
+        -H "Authorization: Bearer $HA_TOKEN" \
         -H "Content-Type: application/json")
     
     entry_id=$(echo "$result" | python3 -c "
@@ -78,13 +67,12 @@ for entry in entries:
 
 # Function to uninstall integration
 uninstall_integration() {
-    local token="$1"
-    local entry_id="$2"
+    local entry_id="$1"
     
     if [ -n "$entry_id" ]; then
         echo "Uninstalling integration (entry_id: $entry_id)..."
-        curl -s -X DELETE "$HA_URL/api/config_entries entry/$entry_id" \
-            -H "Authorization: Bearer $token" \
+        curl -s -X DELETE "$HA_URL/api/config_entries/entry/$entry_id" \
+            -H "Authorization: Bearer $HA_TOKEN" \
             -H "Content-Type: application/json"
         echo "Integration uninstalled."
     else
@@ -92,57 +80,47 @@ uninstall_integration() {
     fi
 }
 
-# Function to install integration
-install_integration() {
-    echo "Installing integration..."
+# Copy integration files via SCP
+copy_integration_files() {
+    echo "Copying integration files to HA server..."
     
-    # Create custom_components directory if it doesn't exist
-    HA_CONFIG_DIR="$HA_CONFIG_DIR"
-    if [ -z "$HA_CONFIG_DIR" ]; then
-        # Try default locations
-        if [ -d "$HOME/.homeassistant" ]; then
-            HA_CONFIG_DIR="$HOME/.homeassistant"
-        elif [ -d "$HOME/config" ]; then
-            HA_CONFIG_DIR="$HOME/config"
-        else
-            echo "Error: Could not find Home Assistant config directory"
-            exit 1
-        fi
-    fi
+    local remote_path="$HA_PATH/custom_components"
     
-    CUSTOM_COMPONENTS="$HA_CONFIG_DIR/custom_components"
+    # Create remote directory (disable host key checking for first connect)
+    ssh -o StrictHostKeyChecking=no -p $HA_PORT $HA_USER@$HA_HOST "mkdir -p $remote_path"
     
-    # Create directory
-    mkdir -p "$CUSTOM_COMPONENTS"
-    
-    # Remove old installation if exists
-    if [ -d "$CUSTOM_COMPONENTS/$INTEGRATION_NAME" ]; then
-        echo "Removing old installation..."
-        rm -rf "$CUSTOM_COMPONENTS/$INTEGRATION_NAME"
-    fi
+    # Remove old integration if exists
+    ssh -o StrictHostKeyChecking=no -p $HA_PORT $HA_USER@$HA_HOST "rm -rf $remote_path/$INTEGRATION_NAME"
     
     # Copy new integration
-    echo "Copying integration to $CUSTOM_COMPONENTS..."
-    cp -r "$REPO_ROOT/$INTEGRATION_PATH" "$CUSTOM_COMPONENTS/"
+    scp -o StrictHostKeyChecking=no -P $HA_PORT -r "$REPO_ROOT/$INTEGRATION_PATH" "$HA_USER@$HA_HOST:$remote_path/"
     
-    echo "Integration installed."
+    echo "Integration files copied."
+}
+
+# Function to reload custom components
+reload_custom_components() {
+    echo "Reloading custom components..."
+    curl -s -X POST "$HA_URL/api/services/homeassistant/reload_custom_components" \
+        -H "Authorization: Bearer $HA_TOKEN" \
+        -H "Content-Type: application/json"
+    echo "Custom components reloaded."
 }
 
 # Function to restart Home Assistant
 restart_ha() {
-    local token="$1"
-    
     echo "Restarting Home Assistant..."
     curl -s -X POST "$HA_URL/api/services/homeassistant/restart" \
-        -H "Authorization: Bearer $token" \
+        -H "Authorization: Bearer $HA_TOKEN" \
         -H "Content-Type: application/json"
     
     echo "Home Assistant restart requested."
     echo "Waiting for HA to come back online..."
     
     # Wait for HA to be ready
-    for i in {1..30}; do
-        if curl -s -o /dev/null -w "%{http_code}" "$HA_URL/api/" | grep -q "200"; then
+    for i in {1..60}; do
+        status=$(curl -s -o /dev/null -w "%{http_code}" "$HA_URL/api/" -H "Authorization: Bearer $HA_TOKEN" 2>/dev/null)
+        if [ "$status" = "200" ]; then
             echo "Home Assistant is online!"
             return 0
         fi
@@ -154,15 +132,19 @@ restart_ha() {
 }
 
 # Main execution
-echo "Step 1: Getting authentication..."
-TOKEN=$(get_auth_token)
+echo "Step 1: Validating authentication..."
+auth_test=$(curl -s -o /dev/null -w "%{http_code}" "$HA_URL/api/" -H "Authorization: Bearer $HA_TOKEN")
+if [ "$auth_test" != "200" ]; then
+    echo "Error: Authentication failed (HTTP $auth_test)"
+    exit 1
+fi
 echo "Authenticated successfully."
 
 echo ""
 echo "Step 2: Checking integration status..."
-if check_integration "$TOKEN"; then
+if check_integration; then
     echo "Integration is installed."
-    ENTRY_ID=$(get_config_entry_id "$TOKEN")
+    ENTRY_ID=$(get_config_entry_id)
 else
     echo "Integration is not installed."
     ENTRY_ID=""
@@ -170,15 +152,15 @@ fi
 
 echo ""
 echo "Step 3: Uninstalling old integration..."
-uninstall_integration "$TOKEN" "$ENTRY_ID"
+uninstall_integration "$ENTRY_ID"
 
 echo ""
-echo "Step 4: Installing new integration..."
-install_integration
+echo "Step 4: Copying integration files to HA server..."
+copy_integration_files
 
 echo ""
 echo "Step 5: Restarting Home Assistant..."
-restart_ha "$TOKEN"
+restart_ha
 
 echo ""
 echo "=== Deployment Complete! ==="
