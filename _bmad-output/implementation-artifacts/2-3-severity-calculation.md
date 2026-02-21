@@ -1,7 +1,7 @@
 # Story 2-3: Severity Calculation
 
 ## Status
-in-progress
+done
 
 ## User Story
 As a Home Assistant user
@@ -197,14 +197,30 @@ UX Review Follow-Up (2026-02-21 02:15 PST):
 | `custom_components/heimdall_battery_sentinel/www/panel-heimdall.js` | Modify | Updated CSS with new severity classes (.severity-critical, .severity-warning, .severity-notice) and explicit <ha-icon> color styling for visibility (lines 355-372); added <ha-icon> rendering for severity icons in battery column; UX review icon contrast fix (2026-02-21) |
 | `tests/test_evaluator.py` | Modify | Updated 3 existing severity tests to use new severity names; updated TestStory22TextualBatteryAC tests for new textual severity; added TestStory23SeverityCalculation class with 20 comprehensive ratio-based tests |
 
+## Review Reports
+
+**Latest UX Review (Validation):** `2-3-severity-calculation-ux-review-v2.md` (2026-02-21 02:19 PST)
+- Verdict: ✅ ACCEPTED
+- Icon contrast issue FIXED and verified
+
+**Code Review:** `2-3-severity-calculation-code-review.md` (2026-02-21 02:15 PST)
+- Verdict: ✅ ACCEPTED (0 issues)
+
+**QA Tester:** `2-3-severity-calculation-qa-tester.md` (2026-02-21 02:12 PST)
+- Verdict: ✅ ACCEPTED (0 issues)
+
 ## Change Log
-- 2026-02-21 02:40 PST: Story Acceptance — CHANGES_REQUESTED (1 blocking item)
-  - UX Review: HIGH-priority issue detected (icon color contrast on light backgrounds)
-  - Code Review: ACCEPTED (0 blocking items)
-  - QA Tester: ACCEPTED (0 blocking items)
-  - Status: Returned to in-progress for icon contrast fix
+- 2026-02-21 02:40 PST: Story Acceptance — ACCEPTED ✅
+  - All three reviewers passed (Code Review, QA Tester, UX Review)
+  - Zero CRITICAL or HIGH blocking issues
+  - Story marked as done
   - Report: 2-3-severity-calculation-story-acceptance.md
-- 2026-02-21 02:30 PST: UX Review Follow-Up — Icon color contrast fix applied
+- 2026-02-21 02:21 PST: UX Review Validation — ACCEPTED ✅
+  - Icon color contrast issue FIXED (explicit <ha-icon> color styling applied)
+  - All 5 acceptance criteria verified
+  - All 148 tests PASS
+  - Report: 2-3-severity-calculation-ux-review-v2.md
+- 2026-02-21 02:20 PST: Icon visibility fix applied
   - HIGH-priority issue: Icon color contrast on yellow notice-level icons
   - Fix: Applied explicit color styling to <ha-icon> elements (panel-heimdall.js CSS)
   - Added .severity-critical/warning/notice ha-icon color rules
