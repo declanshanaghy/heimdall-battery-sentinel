@@ -1,6 +1,6 @@
 # Story 4.1: Tabbed Interface
 
-Status: ready-for-dev
+Status: in-progress
 <!-- NOTE: Status values MUST match sprint-status.yaml exactly: backlog | ready-for-dev | in-progress | review | done -->
 
 ## Story
@@ -17,13 +17,13 @@ so that I can quickly switch between these views with live updating counts.
 
 ## Tasks / Subtasks
 
-- [ ] Implement tab component (AC: #1, #2)
-  - [ ] Create tab bar UI with two tabs
-  - [ ] Implement tab switching logic
-  - [ ] Add live count badges that update from backend
-- [ ] Persist tab state (AC: #3)
-  - [ ] Store selected tab in local storage
-  - [ ] Restore tab selection on panel load
+- [x] Implement tab component (AC: #1, #2)
+  - [x] Create tab bar UI with two tabs
+  - [x] Implement tab switching logic
+  - [x] Add live count badges that update from backend
+- [x] Persist tab state (AC: #3)
+  - [x] Store selected tab in local storage
+  - [x] Restore tab selection on panel load
 
 ## Dev Notes
 

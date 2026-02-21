@@ -24,6 +24,8 @@
 
   const TAB_LOW_BATTERY = "low_battery";
   const TAB_UNAVAILABLE = "unavailable";
+  const LOCAL_STORAGE_KEY = "heimdall_panel_active_tab";
+  const STORAGE_KEY = "heimdall_active_tab";
 
   const DEFAULT_SORT = {
     [TAB_LOW_BATTERY]: { by: "battery_level", dir: "asc" },
@@ -69,7 +71,7 @@
 
       // UI state
       /** @type {string} Currently active tab ("low_battery" or "unavailable"). */
-      this._activeTab = TAB_LOW_BATTERY;
+      this._activeTab = (localStorage.getItem(STORAGE_KEY) === TAB_UNAVAILABLE) ? TAB_UNAVAILABLE : TAB_LOW_BATTERY;
       /** @type {Object} Summary data: low_battery_count, unavailable_count, threshold. */
       this._summary = { low_battery_count: 0, unavailable_count: 0, threshold: 15 };
       /** @type {Object<string, Array>} Cached rows by tab. */
@@ -540,6 +542,7 @@
     _switchTab(tab) {
       if (tab === this._activeTab) return;
       this._activeTab = tab;
+      localStorage.setItem(STORAGE_KEY, tab);
       this._renderTabs();
       this._renderTable();
       // Load first page if not loaded yet
