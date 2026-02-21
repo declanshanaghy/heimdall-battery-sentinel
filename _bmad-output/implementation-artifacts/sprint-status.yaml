@@ -35,6 +35,10 @@ epics:
     status: done
 - id: 3
   title: Unavailable Tracking
+  status: done
+  retrospective: epic-3-retrospective.md
+  completion_date: 2026-02-21
+  retrospective_date: 2026-02-21
   stories:
   - id: 3-1
     slug: unavailable-detection
