@@ -344,15 +344,21 @@
           /* Severity Colors — Story 2-3: Ratio-Based Severity */
           /* Critical (ratio 0-33): red color */
           .severity-critical { color: #F44336; font-weight: 500; }
+          .severity-critical ha-icon { color: #F44336; }
           /* Warning (ratio 34-66): orange color */
           .severity-warning { color: #FF9800; font-weight: 500; }
+          .severity-warning ha-icon { color: #FF9800; }
           /* Notice (ratio 67-100): yellow color */
           .severity-notice { color: #FFEB3B; font-weight: 500; }
+          .severity-notice ha-icon { color: #FFEB3B; }
           
           /* Legacy severity colors for backward compatibility */
           .severity-red { color: #F44336; font-weight: 500; }
+          .severity-red ha-icon { color: #F44336; }
           .severity-orange { color: #FF9800; font-weight: 500; }
+          .severity-orange ha-icon { color: #FF9800; }
           .severity-yellow { color: #FFEB3B; font-weight: 500; }
+          .severity-yellow ha-icon { color: #FFEB3B; }
           
           .loading {
             text-align: center;

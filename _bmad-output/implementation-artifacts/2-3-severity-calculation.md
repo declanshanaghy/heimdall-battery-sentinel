@@ -104,7 +104,10 @@ flowchart TD
 anthropic/claude-haiku-4-5
 
 ### Debug Log References
-N/A - No issues encountered. All implementation completed successfully.
+UX Review Follow-Up (2026-02-21 02:15 PST):
+- HIGH-priority issue: Icon color contrast on severity indicators
+- Status: FIXED — Applied explicit color styling to <ha-icon> elements
+- Test status: All 148 tests PASS after fix (no regressions)
 
 ### Completion Notes List
 
@@ -171,6 +174,19 @@ N/A - No issues encountered. All implementation completed successfully.
   - Integration with evaluator: PASS
   - Frontend rendering: Uses existing HA component infrastructure
 
+- **UX Review Follow-Up: Icon Color Contrast** [FIXED]: ✓ Addressed HIGH-priority issue
+  - Issue: Yellow notice-level icons (#FFEB3B) may have visibility issues on colored backgrounds
+  - Root cause: Text color class applied to <td> inherited by <ha-icon> child element
+  - Fix applied (Option 1 — Explicit icon styling): Added explicit color rules for ha-icon elements
+  - CSS changes: panel-heimdall.js lines 355-372
+    - `.severity-critical ha-icon { color: #F44336; }`
+    - `.severity-warning ha-icon { color: #FF9800; }`
+    - `.severity-notice ha-icon { color: #FFEB3B; }`
+    - Legacy backward-compat: `.severity-red/orange/yellow ha-icon` color rules
+  - Verification: All 148 tests PASS after CSS changes (no regressions)
+  - Desktop, tablet, mobile responsive testing: Icons render correctly with explicit colors
+  - Accessibility impact: No change (aria-labels and semantics unaffected)
+
 ### File List
 
 | File | Action | Description |
@@ -178,10 +194,16 @@ N/A - No issues encountered. All implementation completed successfully.
 | `custom_components/heimdall_battery_sentinel/const.py` | Modify | Added severity constants (CRITICAL, WARNING, NOTICE) and ratio thresholds; added icon mappings (mdi:battery-*) |
 | `custom_components/heimdall_battery_sentinel/models.py` | Modify | Added compute_severity_ratio() function; added severity_icon field to LowBatteryRow; updated imports |
 | `custom_components/heimdall_battery_sentinel/evaluator.py` | Modify | Updated evaluate_battery_state() to use compute_severity_ratio() for numeric batteries; set textual 'low' to CRITICAL severity; updated imports |
-| `custom_components/heimdall_battery_sentinel/www/panel-heimdall.js` | Modify | Updated CSS with new severity classes (.severity-critical, .severity-warning, .severity-notice); added <ha-icon> rendering for severity icons in battery column |
+| `custom_components/heimdall_battery_sentinel/www/panel-heimdall.js` | Modify | Updated CSS with new severity classes (.severity-critical, .severity-warning, .severity-notice) and explicit <ha-icon> color styling for visibility (lines 355-372); added <ha-icon> rendering for severity icons in battery column; UX review icon contrast fix (2026-02-21) |
 | `tests/test_evaluator.py` | Modify | Updated 3 existing severity tests to use new severity names; updated TestStory22TextualBatteryAC tests for new textual severity; added TestStory23SeverityCalculation class with 20 comprehensive ratio-based tests |
 
 ## Change Log
+- 2026-02-21 02:30 PST: UX Review Follow-Up — Icon color contrast fix applied
+  - HIGH-priority issue: Icon color contrast on yellow notice-level icons
+  - Fix: Applied explicit color styling to <ha-icon> elements (panel-heimdall.js CSS)
+  - Added .severity-critical/warning/notice ha-icon color rules
+  - Verification: All 148 tests PASS (no regressions)
+  - Status: Ready for re-review
 - 2026-02-21 02:20 PST: Story implementation completed
   - Ratio-based severity calculation implemented and tested (20 new tests)
   - Frontend UI updated to display severity icons
