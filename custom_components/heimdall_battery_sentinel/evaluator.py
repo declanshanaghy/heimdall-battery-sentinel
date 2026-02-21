@@ -1,1 +1,1 @@
-"""Battery state evaluation logic for Heimdall Battery Sentinel."""
+"""Battery evaluation logic."""

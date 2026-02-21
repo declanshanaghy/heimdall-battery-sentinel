@@ -1,1 +1,1 @@
-"""Data models for Heimdall Battery Sentinel."""
+"""Data models for battery monitoring."""

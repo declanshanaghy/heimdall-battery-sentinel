@@ -1,1 +1,1 @@
-"""WebSocket API for Heimdall Battery Sentinel."""
+"""WebSocket API for communication."""

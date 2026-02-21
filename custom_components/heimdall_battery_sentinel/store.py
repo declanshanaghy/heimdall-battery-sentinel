@@ -1,1 +1,1 @@
-"""Data storage for Heimdall Battery Sentinel."""
+"""Data storage abstraction."""

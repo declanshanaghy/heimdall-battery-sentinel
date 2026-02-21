@@ -1,1 +1,1 @@
-"""Entity registry for Heimdall Battery Sentinel."""
+"""Entity registry management."""

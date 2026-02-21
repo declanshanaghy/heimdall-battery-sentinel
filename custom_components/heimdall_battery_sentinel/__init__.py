@@ -1,15 +1,10 @@
-"""The Heimdall Battery Sentinel integration."""
+"""The heimdall_battery_sentinel integration."""
 import logging
 
-from homeassistant.core import HomeAssistant
-from homeassistant.helpers.typing import ConfigType
+DOMAIN = "heimdall_battery_sentinel"
+LOGGER = logging.getLogger(__name__)
 
-from .const import DOMAIN
-
-_LOGGER = logging.getLogger(__name__)
-
-async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
-    """Set up the Heimdall Battery Sentinel component."""
-    # Nothing to do in the setup phase yet
-    _LOGGER.info("Heimdall Battery Sentinel setup")
+async def async_setup(hass, config):
+    """Set up the heimdall_battery_sentinel component."""
+    LOGGER.info("Setting up heimdall_battery_sentinel integration")
     return True

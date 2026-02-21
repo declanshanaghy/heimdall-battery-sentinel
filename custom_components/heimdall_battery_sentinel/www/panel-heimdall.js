@@ -1,2 +1,1 @@
-// Placeholder for Heimdall Battery Sentinel panel
-console.log('Heimdall Battery Sentinel panel loaded');
+// Custom panel JavaScript for Heimdall Battery Sentinel
