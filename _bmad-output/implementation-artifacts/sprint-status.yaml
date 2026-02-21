@@ -43,7 +43,7 @@ epics:
   - id: 3-2
     slug: metadata-enrichment
     title: Metadata Enrichment
-    status: review
+    status: in-progress
 - id: 4
   title: Frontend UI
   stories:

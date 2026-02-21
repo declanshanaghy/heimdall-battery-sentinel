@@ -216,9 +216,12 @@ def _handle_state_changed(
             return
 
         meta = resolver.resolve(entity_id)
+        LOGGER.debug(f"Metadata for {entity_id}: unpacked {len(meta) if meta else 0} elements (expected 4)")
         if meta and len(meta) == 4:
             manufacturer, model, area, device_id = meta
         else:
+            if meta and len(meta) != 4:
+                LOGGER.warning(f"Metadata for {entity_id} has unexpected length: {len(meta) if meta else 0}, expected 4")
             manufacturer, model, area = meta if meta else (None, None, None)
             device_id = None
 

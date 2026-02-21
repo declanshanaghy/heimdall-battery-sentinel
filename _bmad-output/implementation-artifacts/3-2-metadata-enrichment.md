@@ -1,6 +1,6 @@
 # Story: Metadata Enrichment for Battery and Unavailable Entities
 
-**Status:** review  
+**Status:** in-progress  
 **Story Key:** 3-2-metadata-enrichment  
 **Created:** 2026-02-20  
 **Author:** Development Agent  
@@ -28,9 +28,9 @@ So that I can quickly identify devices and their locations when addressing batte
    - [x] Update websocket payloads to include new metadata fields
 
 2. Frontend implementation:
-   - [ ] Add manufacturer/model column to both tables
-   - [ ] Add area column to both tables
-   - [ ] Implement proper null value display ("Unknown", "Unassigned")
+   - [x] Add manufacturer/model column to both tables
+   - [x] Add area column to both tables
+   - [x] Implement proper null value display ("Unknown", "Unassigned")
 
 3. Testing:
    - [x] Verify metadata resolution with sample entities
@@ -188,6 +188,11 @@ N/A - All tasks completed successfully. Code quality checks: 177/177 tests PASS.
 | `tests/test_metadata_resolver.py` | Create | New test file with 13 tests for MetadataResolver and cache invalidation (AC4) |
 
 ## Change Log
+- **2026-02-21 03:06**: Story Acceptance — CHANGES_REQUESTED (4 blocking items)
+  - Code Review: CHANGES_REQUESTED (3 blocking items)
+  - QA Tester: CHANGES_REQUESTED (1 blocking item: BUG-1)
+  - UX Review: CHANGES_REQUESTED (1 blocking item: UX-CRIT-1)
+  - Status: review → in-progress
 - **2026-02-21**: Story 3-2 backend implementation completed
   - Backend tasks 1-4: COMPLETED
   - Registry event subscriptions added for real-time cache invalidation

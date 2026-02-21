@@ -34,11 +34,13 @@
     [TAB_LOW_BATTERY]: [
       { key: "friendly_name", label: "Entity" },
       { key: "battery_level", label: "Battery" },
+      { key: "model", label: "Model" },
       { key: "area", label: "Area" },
       { key: "manufacturer", label: "Manufacturer" },
     ],
     [TAB_UNAVAILABLE]: [
       { key: "friendly_name", label: "Entity" },
+      { key: "model", label: "Model" },
       { key: "area", label: "Area" },
       { key: "manufacturer", label: "Manufacturer" },
       { key: "updated_at", label: "Since" },
