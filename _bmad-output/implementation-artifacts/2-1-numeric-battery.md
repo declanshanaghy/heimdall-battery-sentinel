@@ -114,13 +114,25 @@ Provide core battery monitoring for numeric battery entities meeting Home Assist
 anthropic/claude-haiku-4-5
 
 ### Debug Log References
-N/A - No issues encountered. All implementation already complete from stories 1-1 and 1-2.
+[Review Continuation] AC4 device filtering was not implemented in initial version. Code review identified missing per-device filtering logic. Fixed in this run:
+- Modified evaluator.py: batch_evaluate() and new _filter_one_battery_per_device() method
+- Extended registry.py: MetadataResolver.resolve() returns 4-tuple with device_id
+- Updated models.py: LowBatteryRow now includes device_id field
+- Updated __init__.py and test_event_subscription.py to handle extended tuple format
+- Added 4 test cases for AC4 device filtering scenarios
 
 ### Completion Notes List
-- **Numeric battery evaluation**: ✓ Implemented in evaluator.py
+- **AC4 Device Filtering** [FIXED]: ✓ Implemented per-device filtering in evaluator.py
+  - Extended metadata tuple from 3 to 4 elements: (manufacturer, model, area, device_id)
+  - Added device_id field to LowBatteryRow dataclass
+  - Implemented _filter_one_battery_per_device() method in BatteryEvaluator
+  - Groups results by device_id, keeps only first by entity_id ascending
+  - Handles entities without device_id (kept as-is)
+  - Logic: For each device, sort batteries by entity_id and keep the lowest
+- **Numeric battery evaluation**: ✓ Implemented in evaluator.py (from prior work)
   - `evaluate_battery_state()`: Parses float, checks unit=="%", includes if value ≤ threshold
   - `BatteryEvaluator.evaluate_low_battery()`: Instance wrapper with threshold management
-  - `BatteryEvaluator.batch_evaluate()`: Batch processing with optional metadata resolution
+  - `BatteryEvaluator.batch_evaluate()`: Batch processing with device-level filtering (AC4)
   - Returns `LowBatteryRow` with battery_numeric field and computed severity
 - **Display formatting**: ✓ Implemented in evaluator.py
   - Displays as rounded integer: `f"{round(numeric_value)}%"`
@@ -141,52 +153,73 @@ N/A - No issues encountered. All implementation already complete from stories 1-
   - UNIT_PERCENT = "%"
   - SEVERITY_RED_THRESHOLD = 5, SEVERITY_ORANGE_THRESHOLD = 10
   - DEFAULT_PAGE_SIZE = 100 (AC5)
-- **Unit tests**: ✓ All 109 tests passing
+- **Unit tests**: ✓ All 113 tests (109 + 4 new AC4 tests) passing
   - 34 evaluator tests covering numeric battery logic
+  - 4 new evaluator tests for AC4 device filtering
   - 30 model tests covering severity and sorting
   - 30+ store tests covering paging and versioning
   - 12 event subscription tests (from story 1-2)
   - 7 integration setup tests (from story 1-1)
+- **Test cases for AC4**:
+  - test_device_with_two_batteries_both_low_returns_first_by_entity_id
+  - test_device_with_two_batteries_one_low_returns_low
+  - test_multiple_devices_with_multiple_batteries_each
+  - test_batch_evaluate_with_metadata_fn_extended_format
 
 ### File List
 
 | File | Action | Description |
 |------|--------|-------------|
-| `custom_components/heimdall_battery_sentinel/evaluator.py` | Implemented (Story 1-1) | Numeric battery evaluation with `evaluate_battery_state()`, severity computation, batch evaluation |
-| `custom_components/heimdall_battery_sentinel/models.py` | Implemented (Story 1-1) | `LowBatteryRow` with battery_numeric field, `compute_severity()`, `sort_low_battery_rows()` |
-| `custom_components/heimdall_battery_sentinel/store.py` | Implemented (Story 1-1) | `HeimdallStore.get_page()` with offset pagination, versioning, sorting |
-| `custom_components/heimdall_battery_sentinel/const.py` | Implemented (Story 1-1) | Battery threshold constants, page size, severity thresholds |
-| `tests/test_evaluator.py` | Create (Story 1-1) | 34 unit tests for numeric battery evaluation logic |
-| `tests/test_models.py` | Create (Story 1-1) | 30 unit tests for severity and sorting |
-| `tests/test_store.py` | Create (Story 1-1) | 30+ unit tests for paging, versioning, and store operations |
+| `custom_components/heimdall_battery_sentinel/evaluator.py` | Modify | AC4: Added device_id filtering via _filter_one_battery_per_device(); updated batch_evaluate() to handle 4-tuple metadata format |
+| `custom_components/heimdall_battery_sentinel/models.py` | Modify | AC4: Added device_id field to LowBatteryRow dataclass |
+| `custom_components/heimdall_battery_sentinel/registry.py` | Modify | AC4: Extended MetaTuple to 4-tuple; updated resolve() and _resolve_uncached() to return device_id |
+| `custom_components/heimdall_battery_sentinel/__init__.py` | Modify | AC4: Updated _handle_state_changed() to unpack 4-tuple and attach device_id to rows |
+| `tests/test_evaluator.py` | Modify | AC4: Added 4 test cases for device filtering (two_batteries_both_low, one_low_per_device, multiple_devices, extended_format) |
+| `tests/test_event_subscription.py` | Modify | Updated metadata_fn returns from 3-tuple to 4-tuple format (3 instances) |
 
 ## Change Log
+- 2026-02-20 23:15 PST: AC4 device filtering implemented (code review follow-up)
+  - Extended MetadataResolver to return device_id
+  - Added per-device filtering in batch_evaluate()
+  - Implemented _filter_one_battery_per_device() for one-battery-per-device logic
+  - Added 4 test cases covering AC4 scenarios
+  - Updated all metadata_fn calls to handle extended 4-tuple format
+  - All 113 unit tests PASS (4 new AC4 tests + 109 existing)
+  
 - 2026-02-20 22:56 PST: Story implementation documented. All acceptance criteria verified complete:
   - AC1 ✓ Numeric battery evaluation (evaluate_battery_state)
   - AC2 ✓ Default threshold 15% (const.py)
   - AC3 ✓ Rounded display with '%' (models.py)
-  - AC4 ✓ Entity selection (handled by ascending entity_id sorting)
+  - AC4 ✗ Entity selection (NOT implemented - FIXED in 23:15 update)
   - AC5 ✓ Server-side paging/sorting (store.py, models.py)
-  - All 109 unit tests PASS (100% success rate, no regressions)
-  - Build status: ✓ Python syntax valid, no linting errors
+  - 109 unit tests PASS
 
 ## Status: REVIEW
 
-All implementation tasks completed:
-✓ Numeric battery evaluation implemented and tested
-✓ Display formatting (rounded integer with '%') implemented
-✓ Severity calculation implemented (red/orange/yellow)
-✓ Server-side paging implemented (page_size=100)
-✓ Server-side sorting implemented (battery_level, friendly_name, area, manufacturer)
-✓ Comprehensive unit test suite (109 tests, 100% pass rate)
+All implementation tasks completed (including AC4 device filtering fix):
+✓ AC1: Numeric battery evaluation implemented and tested
+✓ AC2: Display formatting (rounded integer with '%') implemented
+✓ AC3: Severity calculation implemented (red/orange/yellow)
+✓ AC4: Device-level filtering implemented (one battery per device, first by entity_id ascending)
+✓ AC5: Server-side paging implemented (page_size=100)
+✓ AC5: Server-side sorting implemented (battery_level, friendly_name, area, manufacturer)
+✓ Comprehensive unit test suite with AC4 coverage (4 new tests for device filtering)
 ✓ Code follows architecture.md patterns and conventions
 ✓ All acceptance criteria met
+
+**AC4 Implementation Summary:**
+- Extended MetadataResolver to return device_id as 4th tuple element
+- Added device_id field to LowBatteryRow dataclass
+- Implemented _filter_one_battery_per_device() in BatteryEvaluator
+- Per-device filtering groups rows by device_id and keeps only first by entity_id ascending
+- Added 4 test cases covering: two low batteries per device, one low + one ok per device, multiple devices
+- Updated metadata_fn signature from 3-tuple to 4-tuple throughout codebase
 
 **Acceptance Criteria Status:**
 ✓ AC1: Monitor entities with device_class=battery AND unit_of_measurement='%'
 ✓ AC2: Default threshold at 15% (configurable)
 ✓ AC3: Display battery level as rounded integer with '%' sign
-✓ AC4: For devices with multiple battery entities, select first by entity_id ascending
+✓ AC4: For devices with multiple battery entities, select first by entity_id ascending [FIXED]
 ✓ AC5: Server-side paging/sorting of battery entities with page size=100
 
 **Next:** Ready for code review workflow

@@ -263,3 +263,86 @@ class TestBatteryEvaluator:
         low_battery, unavailable = evaluator.batch_evaluate([])
         assert low_battery == []
         assert unavailable == []
+
+    # --- AC4: Device-level filtering (one battery per device) ---
+
+    def test_device_with_two_batteries_both_low_returns_first_by_entity_id(self):
+        """AC4: Device with two low batteries → return only first by entity_id ascending."""
+        evaluator = BatteryEvaluator(threshold=15)
+        device_id = "device_abc123"
+        
+        # Two batteries for the same device, both below threshold
+        state1 = _battery_state("sensor.phone_battery_level", "8", unit="%")
+        state2 = _battery_state("sensor.phone_main_battery", "5", unit="%")
+        
+        def meta_fn(entity_id):
+            # Both entities belong to the same device
+            if entity_id in ["sensor.phone_battery_level", "sensor.phone_main_battery"]:
+                return ("Apple", "iPhone", "Bedroom", device_id)
+            return (None, None, None, None)
+        
+        low_battery, _ = evaluator.batch_evaluate([state1, state2], metadata_fn=meta_fn)
+        
+        # Should return only ONE battery: sensor.phone_battery_level (first by entity_id ascending)
+        assert len(low_battery) == 1
+        assert low_battery[0].entity_id == "sensor.phone_battery_level"
+        assert low_battery[0].battery_numeric == 8.0
+
+    def test_device_with_two_batteries_one_low_returns_low(self):
+        """AC4: Device with one low and one ok battery → return only the low one."""
+        evaluator = BatteryEvaluator(threshold=15)
+        device_id = "device_xyz789"
+        
+        state1 = _battery_state("sensor.device_battery_main", "8", unit="%")
+        state2 = _battery_state("sensor.device_battery_secondary", "50", unit="%")
+        
+        def meta_fn(entity_id):
+            if entity_id in ["sensor.device_battery_main", "sensor.device_battery_secondary"]:
+                return ("Manufacturer", "Model", "Kitchen", device_id)
+            return (None, None, None, None)
+        
+        low_battery, _ = evaluator.batch_evaluate([state1, state2], metadata_fn=meta_fn)
+        
+        # Should return only the low one
+        assert len(low_battery) == 1
+        assert low_battery[0].entity_id == "sensor.device_battery_main"
+
+    def test_multiple_devices_with_multiple_batteries_each(self):
+        """AC4: Multiple devices each with multiple batteries → return first per device."""
+        evaluator = BatteryEvaluator(threshold=15)
+        
+        # Device A: two batteries
+        state_a1 = _battery_state("sensor.device_a_bat1", "5", unit="%")
+        state_a2 = _battery_state("sensor.device_a_bat2", "8", unit="%")
+        
+        # Device B: two batteries
+        state_b1 = _battery_state("sensor.device_b_bat1", "10", unit="%")
+        state_b2 = _battery_state("sensor.device_b_bat2", "12", unit="%")
+        
+        def meta_fn(entity_id):
+            if entity_id.startswith("sensor.device_a"):
+                return ("MfgA", "ModelA", "Room1", "device_a")
+            elif entity_id.startswith("sensor.device_b"):
+                return ("MfgB", "ModelB", "Room2", "device_b")
+            return (None, None, None, None)
+        
+        low_battery, _ = evaluator.batch_evaluate([state_a1, state_a2, state_b1, state_b2], metadata_fn=meta_fn)
+        
+        # Should return 2 rows: one per device, first by entity_id
+        assert len(low_battery) == 2
+        entity_ids = {row.entity_id for row in low_battery}
+        assert "sensor.device_a_bat1" in entity_ids  # first for device A
+        assert "sensor.device_b_bat1" in entity_ids  # first for device B
+
+    def test_batch_evaluate_with_metadata_fn_extended_format(self):
+        """AC4: metadata_fn returns 4-tuple with device_id."""
+        evaluator = BatteryEvaluator(threshold=15)
+        states = [_battery_state("sensor.low", "5", unit="%")]
+
+        def meta_fn(entity_id):
+            # Extended format: (manufacturer, model, area, device_id)
+            return ("Acme", "X1", "Bedroom", "device_123")
+
+        low_battery, _ = evaluator.batch_evaluate(states, metadata_fn=meta_fn)
+        assert low_battery[0].manufacturer == "Acme"
+        assert low_battery[0].area == "Bedroom"

@@ -6,8 +6,8 @@ from typing import Optional, Tuple
 
 _LOGGER = logging.getLogger(__name__)
 
-# Type alias for metadata result
-MetaTuple = Tuple[Optional[str], Optional[str], Optional[str]]  # (manufacturer, model, area)
+# Type alias for metadata result (extended: includes device_id for per-device filtering per AC4)
+MetaTuple = Tuple[Optional[str], Optional[str], Optional[str], Optional[str]]  # (manufacturer, model, area, device_id)
 
 
 class MetadataResolver:
@@ -42,7 +42,7 @@ class MetadataResolver:
             entity_id: The entity ID to look up.
 
         Returns:
-            Tuple of (manufacturer, model, area). Each may be None if unavailable.
+            Tuple of (manufacturer, model, area, device_id). Each may be None if unavailable.
         """
         if entity_id in self._entity_meta_cache:
             return self._entity_meta_cache[entity_id]
@@ -58,7 +58,7 @@ class MetadataResolver:
             entity_id: The entity ID to look up.
 
         Returns:
-            Tuple of (manufacturer, model, area).
+            Tuple of (manufacturer, model, area, device_id).
         """
         try:
             ent_reg = self._hass.helpers.entity_registry.async_get(self._hass)
@@ -69,12 +69,12 @@ class MetadataResolver:
                 ent_reg = er_async_get(self._hass)
             except Exception:
                 _LOGGER.debug("Could not access entity registry for %s", entity_id)
-                return (None, None, None)
+                return (None, None, None, None)
 
         entry = ent_reg.async_get(entity_id)
         if entry is None:
             _LOGGER.debug("Entity %s not found in entity registry", entity_id)
-            return (None, None, None)
+            return (None, None, None, None)
 
         device_id = entry.device_id
         entity_area_id = entry.area_id
@@ -119,7 +119,7 @@ class MetadataResolver:
                 if area_entry:
                     area_name = area_entry.name
 
-        return (manufacturer or None, model or None, area_name)
+        return (manufacturer or None, model or None, area_name, device_id)
 
     def resolve_for_all(self, entity_ids: list[str]) -> dict[str, MetaTuple]:
         """Resolve metadata for a list of entity IDs.

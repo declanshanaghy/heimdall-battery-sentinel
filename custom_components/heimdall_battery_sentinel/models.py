@@ -29,6 +29,7 @@ class LowBatteryRow:
     manufacturer: Optional[str] = None
     model: Optional[str] = None
     area: Optional[str] = None
+    device_id: Optional[str] = None  # Per AC4: used for per-device filtering
     updated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
     def as_dict(self) -> dict:

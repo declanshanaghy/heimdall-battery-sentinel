@@ -45,7 +45,7 @@ class TestInitialDatasetPopulation:
         
         # Simulate what _populate_initial_datasets does
         def metadata_fn(entity_id):
-            return None, None, None  # No metadata for this test
+            return None, None, None, None  # No metadata for this test (extended format with device_id)
         
         low_battery_rows, unavailable_rows = evaluator.batch_evaluate(states, metadata_fn)
         store.bulk_set_low_battery(low_battery_rows)
@@ -78,7 +78,7 @@ class TestInitialDatasetPopulation:
         evaluator = BatteryEvaluator(threshold=15)
         
         def metadata_fn(entity_id):
-            return None, None, None
+            return None, None, None, None
         
         low_battery_rows, unavailable_rows = evaluator.batch_evaluate(states, metadata_fn)
         store.bulk_set_unavailable(unavailable_rows)
@@ -101,7 +101,7 @@ class TestInitialDatasetPopulation:
         evaluator = BatteryEvaluator(threshold=15)
         
         def metadata_fn(entity_id):
-            return None, None, None
+            return None, None, None, None
         
         low_battery_rows, unavailable_rows = evaluator.batch_evaluate([], metadata_fn)
         store.bulk_set_low_battery(low_battery_rows)

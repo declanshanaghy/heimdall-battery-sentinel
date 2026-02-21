@@ -237,9 +237,12 @@ class BatteryEvaluator:
     def batch_evaluate(self, states, metadata_fn=None):
         """Evaluate a collection of HA states.
 
+        Per AC4, filters low_battery results to one battery per device (first by entity_id ascending).
+
         Args:
             states: Iterable of HA State objects.
-            metadata_fn: Optional callable(entity_id) -> (manufacturer, model, area).
+            metadata_fn: Optional callable(entity_id) -> (manufacturer, model, area) or 
+                         (manufacturer, model, area, device_id).
 
         Returns:
             Tuple of (list[LowBatteryRow], list[UnavailableRow]).
@@ -250,16 +253,62 @@ class BatteryEvaluator:
         for state in states:
             if metadata_fn is not None:
                 meta = metadata_fn(state.entity_id)
-                manufacturer, model, area = meta if meta else (None, None, None)
+                if meta is None:
+                    manufacturer, model, area, device_id = None, None, None, None
+                elif len(meta) == 4:
+                    # Extended format: (manufacturer, model, area, device_id)
+                    manufacturer, model, area, device_id = meta
+                else:
+                    # Legacy format: (manufacturer, model, area)
+                    manufacturer, model, area = meta if meta else (None, None, None)
+                    device_id = None
             else:
-                manufacturer, model, area = None, None, None
+                manufacturer, model, area, device_id = None, None, None, None
 
             lb_row = self.evaluate_low_battery(state, manufacturer, model, area)
             if lb_row is not None:
+                # Attach device_id for per-device filtering (AC4)
+                lb_row.device_id = device_id
                 low_battery.append(lb_row)
 
             un_row = self.evaluate_unavailable(state, manufacturer, model, area)
             if un_row is not None:
                 unavailable.append(un_row)
 
+        # AC4: Filter to one battery per device (first by entity_id ascending)
+        low_battery = self._filter_one_battery_per_device(low_battery)
+
         return low_battery, unavailable
+
+    def _filter_one_battery_per_device(self, rows: list[LowBatteryRow]) -> list[LowBatteryRow]:
+        """Filter rows to keep only one battery per device (first by entity_id ascending).
+
+        Per AC4: "For devices with multiple battery entities, select the first by entity_id ascending."
+
+        Args:
+            rows: List of LowBatteryRow objects, possibly with device_id attributes.
+
+        Returns:
+            Filtered list with at most one row per device_id.
+        """
+        # Group by device_id; entities with device_id=None are kept as-is
+        device_batteries: dict[str, list[LowBatteryRow]] = {}
+        unassigned: list[LowBatteryRow] = []
+
+        for row in rows:
+            device_id = getattr(row, "device_id", None)
+            if device_id is None:
+                unassigned.append(row)
+            else:
+                if device_id not in device_batteries:
+                    device_batteries[device_id] = []
+                device_batteries[device_id].append(row)
+
+        # For each device, keep only the row with the lowest entity_id
+        result: list[LowBatteryRow] = list(unassigned)
+        for device_id, device_rows in device_batteries.items():
+            # Sort by entity_id ascending and keep the first
+            sorted_rows = sorted(device_rows, key=lambda r: r.entity_id)
+            result.append(sorted_rows[0])
+
+        return result

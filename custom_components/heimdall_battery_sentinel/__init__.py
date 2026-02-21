@@ -180,11 +180,17 @@ def _handle_state_changed(
         if entity_id is None:
             return
 
-        manufacturer, model, area = resolver.resolve(entity_id)
+        meta = resolver.resolve(entity_id)
+        if meta and len(meta) == 4:
+            manufacturer, model, area, device_id = meta
+        else:
+            manufacturer, model, area = meta if meta else (None, None, None)
+            device_id = None
 
         # --- Low battery ---
         lb_row = evaluator.evaluate_low_battery(new_state, manufacturer, model, area)
         if lb_row is not None:
+            lb_row.device_id = device_id
             store.upsert_low_battery(lb_row)
         else:
             store.remove_low_battery(entity_id)
