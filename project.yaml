@@ -15,5 +15,5 @@ stack:
 constraints:
   max_stories_per_sprint: 5
   require_code_review: true
-  require_ux_review: false
+  require_ux_review: true
   require_qa: false
