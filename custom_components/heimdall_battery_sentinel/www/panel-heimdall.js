@@ -228,6 +228,15 @@
     _handleSubscriptionEvent(event) {
       const { type, tab } = event;
 
+      if (
+        (type === "invalidated" || type === "upsert" || type === "remove") &&
+        tab !== TAB_LOW_BATTERY &&
+        tab !== TAB_UNAVAILABLE
+      ) {
+        this._showError(`Invalid tab: ${tab}`);
+        return;
+      }
+
       if (type === "summary") {
         this._summary = {
           low_battery_count: event.low_battery_count,

@@ -173,24 +173,27 @@ def _handle_state_changed(
         resolver: MetadataResolver instance.
         event: HA event object with data {"entity_id", "old_state", "new_state"}.
     """
-    entity_id = event.data.get("entity_id")
-    new_state = event.data.get("new_state")
+    try:
+        entity_id = event.data.get("entity_id")
+        new_state = event.data.get("new_state")
 
-    if entity_id is None:
-        return
+        if entity_id is None:
+            return
 
-    manufacturer, model, area = resolver.resolve(entity_id)
+        manufacturer, model, area = resolver.resolve(entity_id)
 
-    # --- Low battery ---
-    lb_row = evaluator.evaluate_low_battery(new_state, manufacturer, model, area)
-    if lb_row is not None:
-        store.upsert_low_battery(lb_row)
-    else:
-        store.remove_low_battery(entity_id)
+        # --- Low battery ---
+        lb_row = evaluator.evaluate_low_battery(new_state, manufacturer, model, area)
+        if lb_row is not None:
+            store.upsert_low_battery(lb_row)
+        else:
+            store.remove_low_battery(entity_id)
 
-    # --- Unavailable ---
-    un_row = evaluator.evaluate_unavailable(new_state, manufacturer, model, area)
-    if un_row is not None:
-        store.upsert_unavailable(un_row)
-    else:
-        store.remove_unavailable(entity_id)
+        # --- Unavailable ---
+        un_row = evaluator.evaluate_unavailable(new_state, manufacturer, model, area)
+        if un_row is not None:
+            store.upsert_unavailable(un_row)
+        else:
+            store.remove_unavailable(entity_id)
+    except Exception as e:
+        LOGGER.error(f"Error in state change handler: {e}", exc_info=True)
