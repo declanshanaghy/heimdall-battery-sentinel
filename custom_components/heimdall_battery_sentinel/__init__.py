@@ -90,7 +90,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         frontend_url_path="heimdall-battery-sentinel",
         sidebar_title="Battery Sentinel",
         sidebar_icon="mdi:battery",
-        html_url="/local/heimdall_battery_sentinel/panel-heimdall.html",
+        html="/local/heimdall_battery_sentinel/panel-heimdall.html",
         require_admin=False,
     )
 
