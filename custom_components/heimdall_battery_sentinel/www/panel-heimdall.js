@@ -391,6 +391,7 @@
             th, td { padding: 6px 8px; }
             th[data-col="area"],
             th[data-col="manufacturer"],
+            th[data-col="model"],
             th[data-col="updated_at"],
             td.hidden-mobile {
               display: none;
@@ -456,7 +457,7 @@
       const bodyRows = rows
         .map((row) => {
           const cells = cols.map((col) => {
-            const isMobileHidden = ["area", "manufacturer", "updated_at"].includes(col.key);
+            const isMobileHidden = ["area", "manufacturer", "model", "updated_at"].includes(col.key);
             const mobileClass = isMobileHidden ? "hidden-mobile" : "";
             const isTabletHidden = ["manufacturer"].includes(col.key);
             const tabletClass = isTabletHidden ? "hidden-tablet" : "";
