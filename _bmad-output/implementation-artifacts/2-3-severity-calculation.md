@@ -1,7 +1,7 @@
 # Story 2-3: Severity Calculation
 
 ## Status
-review
+in-progress
 
 ## User Story
 As a Home Assistant user
@@ -198,6 +198,12 @@ UX Review Follow-Up (2026-02-21 02:15 PST):
 | `tests/test_evaluator.py` | Modify | Updated 3 existing severity tests to use new severity names; updated TestStory22TextualBatteryAC tests for new textual severity; added TestStory23SeverityCalculation class with 20 comprehensive ratio-based tests |
 
 ## Change Log
+- 2026-02-21 02:40 PST: Story Acceptance — CHANGES_REQUESTED (1 blocking item)
+  - UX Review: HIGH-priority issue detected (icon color contrast on light backgrounds)
+  - Code Review: ACCEPTED (0 blocking items)
+  - QA Tester: ACCEPTED (0 blocking items)
+  - Status: Returned to in-progress for icon contrast fix
+  - Report: 2-3-severity-calculation-story-acceptance.md
 - 2026-02-21 02:30 PST: UX Review Follow-Up — Icon color contrast fix applied
   - HIGH-priority issue: Icon color contrast on yellow notice-level icons
   - Fix: Applied explicit color styling to <ha-icon> elements (panel-heimdall.js CSS)
