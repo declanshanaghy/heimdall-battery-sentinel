@@ -1,23 +1,34 @@
-# Code Review Report: Story 2-1 (Numeric Battery Evaluation) — AC4 Re-review
+# Code Review Report: Story 2-1 (Numeric Battery Evaluation) — Re-Review After AC4 Fix
 
 **Story:** 2-1-numeric-battery  
 **Reviewer:** Anthropic Claude Haiku  
 **Date:** 2026-02-20  
-**Overall Verdict:** 🔴 **CHANGES_REQUESTED**
+**Overall Verdict:** ✅ **ACCEPTED**
 
 ---
 
 ## Executive Summary
 
-The story claims AC4 (device-level filtering) has been "FIXED" and is now complete. However, a critical design flaw remains: **AC4 filtering is applied ONLY during initial batch evaluation, but NOT during incremental state_changed updates.** This means the implementation violates the AC4 requirement in real-world scenarios where batteries fall below threshold one-by-one after startup.
+This is a **re-review following the CRITICAL AC4 architectural fix**. The previous review (dated 2026-02-20 23:10 PST) identified two CRITICAL issues that blocked acceptance:
 
-**Severity:** CRITICAL — AC4 acceptance criterion is not fully implemented in production scenarios.
+1. **CRIT-1:** AC4 filtering only applied during initial batch_evaluate(), NOT during incremental state_changed events
+2. **CRIT-2:** Misleading backward compatibility code for 3-tuple metadata format
+
+**Result:** Both critical issues are **RESOLVED**. All 5 acceptance criteria are now properly implemented and enforced across both batch and incremental update paths. All 120 tests pass (113 existing + 7 new AC4 store-layer tests). 
+
+The AC4 invariant (one battery per device, first by entity_id ascending) is now **sound and production-safe** for real-world scenarios where batteries fall below threshold after startup.
 
 ---
 
-## Prior Epic Recommendations
+## Prior Review Findings — Resolution Status
 
-No prior retrospective available — first epic with code review requirement.
+| Finding | Severity | Status | Evidence |
+|---------|----------|--------|----------|
+| AC4 not enforced in state_changed events | CRITICAL | ✅ **FIXED** | store.py:98-175 upsert_low_battery() now enforces AC4 |
+| Misleading 3-tuple backward compatibility | CRITICAL | ✅ **FIXED** | evaluator.py:244-263 now requires 4-tuple only |
+| Test gap: no incremental path validation | HIGH | ✅ **FIXED** | test_ac4_incremental_path_batch_then_event validates full path |
+| No AC4 enforcement at store layer | HIGH | ✅ **FIXED** | AC4 logic moved to upsert_low_battery() |
+| Missing logging for AC4 filtering | MEDIUM | ✅ **FIXED** | Logging added to both batch and store paths |
 
 ---
 
@@ -26,298 +37,167 @@ No prior retrospective available — first epic with code review requirement.
 - [x] Story file loaded and parsed
 - [x] Story status verified as "review"
 - [x] Acceptance Criteria cross-checked against implementation
-- [x] File List reviewed and validated for completeness  
+- [x] File List reviewed and validated for completeness
 - [x] Code quality review performed on changed files
 - [x] Security review performed
-- [x] Tests verified to exist
+- [x] Tests verified to exist and pass (120/120 ✓)
 
 ---
 
 ## Acceptance Criteria Validation
 
-| AC | Status | Evidence |
-|----|--------|----------|
-| AC1 | ✅ PASS | `evaluator.py:70-72` checks `device_class == "battery"` and `unit == "%"` |
-| AC2 | ✅ PASS | `const.py:14` `DEFAULT_THRESHOLD = 15` |
-| AC3 | ✅ PASS | `evaluator.py:80` rounds to integer with `f"{round(numeric_value)}%"` |
-| AC4 | ❌ **FAIL** | See **CRITICAL ISSUE #1** below |
-| AC5 | ✅ PASS | `store.py:262-310` implements offset-based paging with `page_size=100` default |
+| AC | Status | Evidence | Path Validated |
+|----|--------|----------|--------|
+| AC1 | ✅ PASS | `evaluator.py:70-72` checks `device_class == "battery"` and `unit == "%"` | Batch + Event |
+| AC2 | ✅ PASS | `const.py:14` `DEFAULT_THRESHOLD = 15` | Both |
+| AC3 | ✅ PASS | `evaluator.py:80` rounds to integer with `f"{round(numeric_value)}%"` | Both |
+| AC4 | ✅ **PASS** | Enforced at store layer via `upsert_low_battery()` + batch filtering | **Both (FIXED)** |
+| AC5 | ✅ PASS | `store.py:262-310` implements offset-based paging with `page_size=100` default | Both |
+
+**AC4 VALIDATION DETAIL:**
+
+✅ **Batch Path (startup):**
+- `evaluator.batch_evaluate()` applies `_filter_one_battery_per_device()` (line 313)
+- Filters results to max 1 battery per device (sorted by entity_id ascending)
+- Logged at DEBUG level (line 306-315)
+
+✅ **Incremental Path (state_changed events):**
+- `_handle_state_changed()` calls `evaluator.evaluate_low_battery()` then `store.upsert_low_battery()`
+- `upsert_low_battery()` enforces AC4 at line 105-175:
+  - Checks if row.device_id matches existing batteries
+  - Keeps lowest entity_id, removes conflicting higher ones
+  - Sends notifications for AC4 enforcement actions
+- **Full path validated by:** `test_ac4_incremental_path_batch_then_event()` (test_store.py:365-415)
+  - Simulates: batch_evaluate() → state_changed event → upsert_low_battery()
+  - Verifies AC4 constraint holds after incremental update
+  - **Test PASSES** ✓
 
 ---
 
 ## Findings
 
-### 🔴 CRITICAL Issues
-
-#### CRIT-1: AC4 Filtering Not Applied to Incremental State Updates
-
-**Location:** `__init__.py:160-195` (_handle_state_changed)
-
-**Issue:**
-AC4 filtering (one battery per device, first by entity_id ascending) is implemented in `BatteryEvaluator.batch_evaluate()` but **NOT** applied when individual entities change state via the `state_changed` event handler.
-
-**Scenario (Production Bug):**
-```
-1. Startup: Device has 2 batteries [sensor.phone_bat (20%), sensor.phone_main (15%)]
-   → batch_evaluate() applied AC4 filtering
-   → Only sensor.phone_bat remains (first by entity_id ascending)
-   → Store has: {sensor.phone_bat}
-
-2. Later: sensor.phone_main drops to 8%
-   → _handle_state_changed() calls evaluator.evaluate_low_battery()
-   → Returns LowBatteryRow for sensor.phone_main
-   → Calls store.upsert_low_battery(row) DIRECTLY without re-applying AC4 filter
-   → Store.upsert_low_battery() just adds it to self._low_battery dict
-   → Store now has: {sensor.phone_bat, sensor.phone_main} ❌ VIOLATION
-
-Result: AC4 is broken in production after the first incremental update.
-```
-
-**Root Cause:**
-- `batch_evaluate()` includes `self._filter_one_battery_per_device()` (line 277-283)
-- `_handle_state_changed()` calls `evaluate_low_battery()` directly without the filtering
-- There is no coordination between the store's per-device invariant and incremental updates
-
-**Code Evidence:**
-
-```python
-# __init__.py line 180-195: Incremental update path
-lb_row = evaluator.evaluate_low_battery(new_state, manufacturer, model, area)
-if lb_row is not None:
-    lb_row.device_id = device_id
-    store.upsert_low_battery(lb_row)  # ← Added directly, no AC4 filtering!
-
-# evaluator.py line 277-283: Batch path (has filtering)
-low_battery = self._filter_one_battery_per_device(low_battery)
-return low_battery, unavailable
-```
-
-**Fix Required:**
-The `store.upsert_low_battery()` method must enforce AC4 invariant, OR the event handler must re-apply filtering after adding a new row. Currently, neither happens.
-
-**Test Gap:** The 4 new AC4 tests (`test_device_with_two_batteries_*`) all use `batch_evaluate()` and do NOT test incremental updates via `evaluate_low_battery() → upsert_low_battery()` sequence.
+### 🔴 CRITICAL ISSUES
+**None.** All previous critical issues are resolved.
 
 ---
 
-#### CRIT-2: Backward Compatibility Loss for 3-Tuple Metadata
-
-**Location:** `evaluator.py:254-264`, `__init__.py:180-186`
-
-**Issue:**
-The code claims to support "legacy format: (manufacturer, model, area)" with backward compatibility, but this is misleading:
-
-```python
-elif len(meta) == 4:
-    manufacturer, model, area, device_id = meta
-else:
-    # Legacy format: (manufacturer, model, area)
-    manufacturer, model, area = meta if meta else (None, None, None)
-    device_id = None
-```
-
-**Problem:**
-- The `MetadataResolver.resolve()` ALWAYS returns a 4-tuple `(manufacturer, model, area, device_id)` (line 39)
-- The legacy 3-tuple path is **unreachable in normal operation** because `resolve()` never returns a 3-tuple
-- Any external code that calls `batch_evaluate()` with a 3-tuple `metadata_fn` will work, but that's not tested
-
-**Verdict:**
-The backward compatibility is **accidental, not intentional**. The story should either:
-1. Commit to 4-tuple only and remove the legacy path, OR
-2. Explicitly document that 3-tuple callers are deprecated and update all call sites
-
-**Current Status:** Confusing and risky for future maintenance.
+### 🟠 HIGH ISSUES
+**None.** All previous high-priority issues are resolved.
 
 ---
 
-### 🟠 HIGH Issues
+### 🟡 MEDIUM ISSUES
 
-#### HIGH-1: Test Coverage Does Not Validate AC4 in Incremental Scenarios
+#### MED-1: Ambiguous "Remove" Notification Semantics in AC4 Enforcement
 
-**Location:** `tests/test_evaluator.py:313-371`
+**Location:** `store.py:128-143` (first if branch in upsert_low_battery)
 
 **Issue:**
-The 4 AC4 tests only exercise the `batch_evaluate()` path. They do NOT test the real-world scenario:
-```
-1. batch_evaluate([batteries]) → AC4 filtering applied
-2. Later: single battery state_changed → upsert_low_battery() without filtering
-```
+When a higher-entity_id battery is rejected due to AC4 enforcement, a "remove" notification is sent even if the battery was never added to the store:
 
-**Example Missing Test:**
 ```python
-def test_ac4_filtering_persists_across_incremental_updates(self):
-    """AC4: Device with 2 batteries must respect filtering across initial + incremental updates."""
-    evaluator = BatteryEvaluator(threshold=15)
-    store = HeimdallStore(threshold=15)
-    
-    # Step 1: Initial batch — only sensor.a should be kept
-    state_a = _battery_state("sensor.device_bat_a", "8")
-    state_b = _battery_state("sensor.device_bat_b", "10")
-    def meta_fn(eid):
-        return ("Mfg", "Model", "Room", "device_123") if eid.startswith("sensor.device") else (None, None, None, None)
-    
-    low_battery, _ = evaluator.batch_evaluate([state_a, state_b], metadata_fn)
-    assert len(low_battery) == 1  ← Passes ✓
-    assert low_battery[0].entity_id == "sensor.device_bat_a"
-    
-    # Step 2: sensor.b drops below threshold
-    state_b_low = _battery_state("sensor.device_bat_b", "5")
-    meta_b = meta_fn("sensor.device_bat_b")
-    
-    # This is what _handle_state_changed does:
-    lb_row = evaluator.evaluate_low_battery(state_b_low, *meta_b[:3])
-    lb_row.device_id = meta_b[3]
-    store.upsert_low_battery(lb_row)
-    
-    # AC4 should still hold: only one per device!
-    # But currently: store has BOTH sensor.device_bat_a AND sensor.device_bat_b ❌
+if lowest_entity_id != row.entity_id:
+    if row.entity_id in self._low_battery:
+        del self._low_battery[row.entity_id]
+    # ... debug log ...
+    self._notify_subscribers({
+        "type": "remove",  # ← Sent even if battery was never in store
+        "entity_id": row.entity_id,
+    })
 ```
 
-**Verdict:** Critical test gap. The story's "FIXED" claim rests entirely on tests that don't cover the real failure mode.
+**Impact:**
+- Subscribers expecting "remove" to only occur after "add" might see orphaned remove events
+- Could cause UI sync issues if subscribers track notification history
+- Low risk since no WebSocket subscribers are tested, but worth documenting
+
+**Test Gap:**
+`test_upsert_two_batteries_same_device_keeps_first_by_entity_id` tests this scenario but validates only store state, not subscriber notifications.
+
+**Recommendation:**
+1. Document this as intentional (ensuring subscribers know not to show a rejected battery)
+2. OR: Only send "remove" if battery existed before upsert
+3. OR: Use a different event type like "rejected" for AC4-blocked batteries
 
 ---
 
-#### HIGH-2: No Enforcement of AC4 Invariant in Store Layer
+### 🟢 LOW ISSUES
 
-**Location:** `store.py:98-110` (upsert_low_battery)
+#### LOW-1: Unnecessary hasattr() Checks for Dataclass Field
+
+**Location:** `store.py:104, 113`
 
 **Issue:**
-The store's `upsert_low_battery()` method has NO logic to maintain the AC4 constraint (one battery per device). It naively adds any row:
-
 ```python
-def upsert_low_battery(self, row: LowBatteryRow) -> None:
-    """Insert or update a low-battery row."""
-    self._low_battery[row.entity_id] = row  # ← No device-level deduplication
-    # ... notify subscribers
+if hasattr(row, "device_id") and row.device_id is not None:
 ```
 
-**Options to Fix:**
-1. **Store-side:** `upsert_low_battery()` checks if `row.device_id` matches existing rows, removes conflicting ones
-2. **Evaluator-side:** Create a new method `evaluate_and_filter_low_battery()` that applies AC4 after single evaluation
-3. **Event handler-side:** Refactor `_handle_state_changed()` to re-query all batteries for the device after any update
+Since `device_id` is defined in the LowBatteryRow dataclass (models.py:30), `hasattr()` always returns True. The check is redundant.
 
-Currently, none of these are implemented.
+**Verdict:** Purely defensive; works correctly but unnecessary.
+
+**Recommendation:** Simplify to `if row.device_id is not None:` for clarity.
 
 ---
 
-### 🟡 MEDIUM Issues
+#### LOW-2: device_id Field Not Serialized in as_dict()
 
-#### MED-1: Inconsistent device_id Initialization in LowBatteryRow
-
-**Location:** `models.py:19-29`
-
-**Issue:**
-The `device_id` field is added to `LowBatteryRow` but with a potential race condition:
-
-```python
-@dataclass
-class LowBatteryRow:
-    device_id: Optional[str] = None  # ← Field exists
-```
-
-Later, code does:
-```python
-lb_row = evaluator.evaluate_low_battery(...)  # device_id is None here
-lb_row.device_id = device_id  # ← Set AFTER creation
-```
-
-**Risk:**
-If `as_dict()` is called before `device_id` is set, it will serialize `None` instead of the actual device ID. This could cause:
-- WebSocket messages missing device_id
-- Store queries without device context
-- Silent failures in AC4 filtering
-
-**Verdict:** 
-Works by accident (device_id is set immediately after), but fragile. Better pattern would be to pass `device_id` to `evaluate_low_battery()`.
-
-**Code:** `__init__.py:189` and `evaluator.py:265`
-
----
-
-#### MED-2: Test File Updates Incomplete for 4-Tuple Format
-
-**Location:** `tests/test_event_subscription.py:27`
-
-**Issue:**
-The test metadata_fn still returns 4-tuple with None values:
-```python
-def metadata_fn(entity_id):
-    return None, None, None, None  # Extended format with device_id
-```
-
-This works but is:
-1. **Undocumented:** Why return 4-tuple instead of 3?
-2. **Inconsistent:** Some tests use 3-tuple implicitly, others use 4
-3. **Confusing:** Makes backward compatibility claim unclear
-
-**Verdict:** Tests should explicitly document whether they test 3-tuple or 4-tuple format.
-
----
-
-#### MED-3: Missing Logging for AC4 Filter Actions
-
-**Location:** `evaluator.py:280-295` (_filter_one_battery_per_device)
-
-**Issue:**
-The AC4 filtering method silently discards rows:
-
-```python
-for device_id, device_rows in device_batteries.items():
-    sorted_rows = sorted(device_rows, key=lambda r: r.entity_id)
-    result.append(sorted_rows[0])  # ← Silently drops sorted_rows[1:]
-```
-
-**Problem:**
-- No log when a battery is filtered out
-- Makes debugging AC4 behavior very difficult
-- Operators can't understand why a battery is missing from the list
-
-**Verdict:** Should log dropped rows at DEBUG level:
-```python
-if len(sorted_rows) > 1:
-    _LOGGER.debug(
-        "AC4: Device %s has %d batteries; keeping %s, dropping %s",
-        device_id,
-        len(sorted_rows),
-        sorted_rows[0].entity_id,
-        [r.entity_id for r in sorted_rows[1:]]
-    )
-```
-
----
-
-### 🟢 LOW Issues
-
-#### LOW-1: Duplicate Entity ID Sorting Logic
-
-**Location:** `models.py:51-54` and `evaluator.py:290`
-
-**Issue:**
-Entity ID sorting (for tie-breaking in AC4) is done in two places:
-1. `models.py` in `sort_low_battery_rows()`: `key_fn` includes `row.entity_id` as tiebreaker
-2. `evaluator.py` in `_filter_one_battery_per_device()`: explicitly sorts by entity_id
-
-**Verdict:** 
-Works correctly but duplicates logic. Could extract to a shared constant or utility function for consistency.
-
----
-
-#### LOW-2: as_dict() Excludes device_id from Serialization
-
-**Location:** `models.py:32-44`
+**Location:** `models.py:39-44`
 
 **Issue:**
 ```python
 def as_dict(self) -> dict:
-    """Serialize to dictionary for websocket responses."""
     return {
         "entity_id": self.entity_id,
-        # ...
-        # ← device_id NOT included in serialization
+        "friendly_name": self.friendly_name,
+        # ... other fields ...
+        # ← device_id NOT included
     }
 ```
 
-**Verdict:**
-May be intentional (device_id is internal), but if clients need to know why a battery is being shown/hidden, they'll need it. Document this decision explicitly.
+**Context:**
+The device_id field is used internally for AC4 filtering but is not serialized to WebSocket responses. This may be intentional (device_id is an implementation detail), but should be explicitly documented.
+
+**Verdict:** Likely intentional. If clients need to understand device context, add device_id to serialization.
+
+**Recommendation:** Add a comment in as_dict() explaining why device_id is excluded.
+
+---
+
+#### LOW-3: Confusing Priority Terminology in Logging
+
+**Location:** `store.py:163` (second if branch)
+
+**Issue:**
+```python
+_LOGGER.debug(
+    "AC4: Device %s kept %s, removed lower-priority %s",
+    device_id,
+    row.entity_id,
+    entity_id,
+)
+```
+
+The log says "removed lower-priority" for entity_ids > row.entity_id. While technically correct (higher entity_ids are lower priority), the terminology is confusing.
+
+**Verdict:** Logic is sound; terminology could be clearer.
+
+**Recommendation:** Clarify in docs that "priority" means "entity_id ordering" (lower entity_id = higher priority).
+
+---
+
+#### LOW-4: Code Duplication in Sorting Logic
+
+**Location:** `models.py:51-54` and `evaluator.py:307`
+
+**Issue:**
+Entity ID sorting (as AC4 tiebreaker) is implemented in two places:
+- `models.py`: sort_low_battery_rows() uses entity_id in key function
+- `evaluator.py`: _filter_one_battery_per_device() explicitly sorts by entity_id
+
+**Verdict:** Works correctly; minor code duplication.
+
+**Recommendation:** Consider extracting to a shared utility if additional sort logic is added.
 
 ---
 
@@ -325,15 +205,14 @@ May be intentional (device_id is internal), but if clients need to know why a ba
 
 | File | Status | Notes |
 |------|--------|-------|
-| `evaluator.py` | ✅ Modified | AC4 filtering implemented in batch path only |
-| `models.py` | ✅ Modified | device_id field added |
-| `registry.py` | ✅ Modified | Returns 4-tuple with device_id |
-| `__init__.py` | ✅ Modified | Unpacks 4-tuple, but no AC4 enforcement in event handler |
-| `const.py` | ✅ Modified | Constants present |
-| `test_evaluator.py` | ✅ Modified | 4 AC4 tests added, but incomplete |
-| `test_event_subscription.py` | ✅ Modified | Format checking added |
+| `custom_components/heimdall_battery_sentinel/store.py` | ✅ Modified | **CRITICAL FIX**: AC4 enforcement added to upsert_low_battery() |
+| `custom_components/heimdall_battery_sentinel/evaluator.py` | ✅ Modified | Cleaned up 3-tuple legacy code; added AC4 logging to batch path |
+| `custom_components/heimdall_battery_sentinel/models.py` | ✅ No change (device_id already exists) | device_id field properly defined at line 30 |
+| `custom_components/heimdall_battery_sentinel/const.py` | ✅ No change | Constants present |
+| `tests/test_store.py` | ✅ Modified | Added 7 new AC4 tests (TestAC4DeviceFiltering class) |
+| `tests/test_evaluator.py` | ✅ Modified | Updated test_batch_evaluate_with_metadata_fn for 4-tuple format |
 
-**Discrepancies:** None. Git changes match story File List.
+**All files match story File List.** ✅ No discrepancies.
 
 ---
 
@@ -343,70 +222,122 @@ May be intentional (device_id is internal), but if clients need to know why a ba
 - ✅ No SQL injection risks
 - ✅ No shell injection risks
 - ✅ Input validation on thresholds
-- ⚠️ Metadata tuples could be subverted if metadata_fn is untrusted (low risk in HA context)
+- ✅ device_id used only for logical filtering (no security impact)
 
 ### Performance
-- ✅ O(n log n) sorting is acceptable for 100-row pages
-- ✅ AC4 filtering is O(n) single pass
-- ✅ Caching in MetadataResolver reduces registry lookups
+- ✅ O(n) AC4 filtering in store (single pass over existing batteries for device)
+- ✅ O(n log n) batch filtering acceptable for typical datasets
+- ✅ Incremental updates (state_changed) are O(1) for lookup + O(k) for removal where k = number of batteries per device (typically 1-3)
 
 ### Maintainability
-- 🟡 Backward compatibility claim is misleading
-- 🟡 AC4 logic split between batch_evaluate and event handler makes it easy to miss
-- ✅ Constants are well-defined
+- ✅ AC4 enforcement is now clear and localized to two places (batch + store)
+- ✅ 4-tuple requirement is explicit (legacy 3-tuple removed)
+- ✅ Logging provides observability for AC4 filtering actions
+- ✅ Well-commented code explains the invariant
 
 ### Testing
-- 🟡 4 new AC4 tests exist but don't cover incremental scenarios
-- ✅ 109 existing tests pass (basic functionality)
-- ⚠️ No integration test for initial-population → incremental-update sequence
+- ✅ 120 total tests pass (113 existing + 7 new AC4 store tests)
+- ✅ New test coverage includes:
+  - Basic AC4 enforcement (test_upsert_two_batteries_same_device_keeps_first_by_entity_id)
+  - Dynamic priority swapping (test_upsert_lower_entity_id_replaces_higher_entity_id)
+  - Multiple devices (test_upsert_multiple_devices_each_keeps_first_by_entity_id)
+  - Batteries without device_id (test_upsert_without_device_id_not_filtered)
+  - Full production path (test_ac4_incremental_path_batch_then_event) **← CRITICAL**
+- ✅ All acceptance criteria are covered by both batch and incremental path tests
+
+---
+
+## Test Results Summary
+
+```
+============================= test session starts ==============================
+collected 120 items
+
+tests/test_evaluator.py ......................................           [ 31%]
+tests/test_event_subscription.py ............                           [ 41%]
+tests/test_integration_setup.py .......                                 [ 47%]
+tests/test_models.py .......................                           [ 66%]
+tests/test_store.py ........................................             [100%]
+
+============================= 120 passed in 0.34s ===============================
+```
+
+**All tests PASS.** ✅
 
 ---
 
 ## Verification Commands
 
 ```bash
-# Test run
-# (Tests not executable in this environment, but would be:)
-# pytest tests/test_evaluator.py::TestBatteryEvaluator::test_device_with_two_batteries_both_low_returns_first_by_entity_id -v
-# Result: PASS (on batch_evaluate path only)
-
-# Lint
-# (No linting output available)
-
-# Manual code inspection
 cd /home/dshanaghy/src/github.com/declanshanaghy/heimdall-battery-sentinel
-git show 200fb2b --stat
-# Result: 6 files changed, 208 insertions(+), 36 deletions
+
+# Run full test suite
+source .venv/bin/activate
+python -m pytest tests/ -v
+# Result: 120 passed
+
+# Run AC4 tests specifically
+python -m pytest tests/test_store.py::TestAC4DeviceFiltering -v
+# Result: 7 passed
+
+# Verify git status
+git status --porcelain
+# Result: (clean - all changes committed)
+
+# View AC4 commit
+git show 5ce72a2 --stat
+# Result: 394 insertions(+), 81 deletions (consistent with commit message)
 ```
 
 ---
 
 ## Decision Rationale
 
-### Why CHANGES_REQUESTED?
+### Why ACCEPTED?
 
-1. **CRIT-1 (AC4 Filtering in Events)**: AC4 is **violated in production scenarios**. The test suite passes because tests only exercise batch_evaluate(). Real usage will fail when batteries fall below threshold after startup.
+1. **CRIT-1 (AC4 in Events) - FIXED:**
+   - `store.upsert_low_battery()` now enforces AC4 invariant (lines 105-175)
+   - When upserting a battery with device_id, checks for conflicts and keeps lowest entity_id
+   - Removes conflicting batteries and logs actions
+   - **Validation:** test_ac4_incremental_path_batch_then_event() PASSES ✓
 
-2. **CRIT-2 (Backward Compatibility)**: The claim of backward compatibility is technically true but misleading. Future developers will be confused about which format is correct.
+2. **CRIT-2 (Backward Compatibility) - FIXED:**
+   - Removed unreachable 3-tuple legacy code path
+   - Updated docstring to explicitly require 4-tuple: (manufacturer, model, area, device_id)
+   - All metadata_fn calls now properly typed
+   - **Validation:** evaluator.py:244-263 clearly shows 4-tuple requirement
 
-3. **HIGH-1 (Test Gap)**: The 4 AC4 tests do not validate the real failure mode (incremental updates). Story claim of "AC4 FIXED" is not substantiated by evidence.
+3. **HIGH-1 (Test Coverage) - FIXED:**
+   - New comprehensive test: `test_ac4_incremental_path_batch_then_event()`
+   - Validates full production path: batch_evaluate() → state_changed → upsert_low_battery()
+   - **Validation:** Test PASSES and covers the real failure mode
 
-4. **HIGH-2 (Store Invariant)**: The store layer has no enforcement of AC4, meaning any future caller of `upsert_low_battery()` outside the event handler will bypass AC4 entirely.
+4. **HIGH-2 (Store Invariant) - FIXED:**
+   - AC4 enforcement moved from batch path to store layer
+   - Any future caller of `upsert_low_battery()` will have AC4 enforced
+   - Prevents accidental bypasses
+   - **Validation:** 7 AC4 store tests PASS
 
-### What Must Be Fixed:
+5. **All Acceptance Criteria Met:**
+   - AC1 ✓ Numeric battery monitoring (device_class=battery, unit=%)
+   - AC2 ✓ Default threshold 15%
+   - AC3 ✓ Rounded display with '%'
+   - AC4 ✓ Device-level filtering (NOW production-safe)
+   - AC5 ✓ Server-side paging/sorting (page_size=100)
 
-1. **Mandatory (blocks AC4):**
-   - Refactor `upsert_low_battery()` to enforce AC4 invariant, OR
-   - Refactor `_handle_state_changed()` to apply AC4 filtering, OR
-   - Create a new method that combines evaluate + filter + upsert
+6. **No Blocking Issues:**
+   - 5 MEDIUM/LOW issues identified (all non-blocking, mostly code polish)
+   - No issues affect correctness or acceptance criteria
+   - All 120 tests pass with no failures
 
-2. **Mandatory (test validation):**
-   - Add test that exercises: batch_evaluate() → upsert_low_battery() with state change
-   - Verify AC4 invariant holds after incremental update
+### Risk Assessment
 
-3. **Recommended (clarity):**
-   - Remove legacy 3-tuple handling or explicitly deprecate it
-   - Add logging to AC4 filtering for observability
+**Risk Level: LOW**
+
+- AC4 enforcement logic is well-tested (7 new tests + prior batch tests)
+- Production path is validated (batch → event → store)
+- No changes to external API or user-facing behavior
+- Backward compatible (device_id is optional; batteries without device_id are unaffected)
 
 ---
 
@@ -414,24 +345,43 @@ git show 200fb2b --stat
 
 | Category | Count | Status |
 |----------|-------|--------|
-| Critical Issues | 2 | ❌ Block acceptance |
-| High Issues | 2 | ❌ Architectural flaws |
-| Medium Issues | 3 | ⚠️ Should fix |
-| Low Issues | 2 | ℹ️ Polish |
-| **Total** | **9** | **CHANGES_REQUESTED** |
+| Critical Issues Resolved | 2 | ✅ |
+| High Issues Resolved | 2 | ✅ |
+| Medium Issues | 1 | ⚠️ Non-blocking |
+| Low Issues | 3 | ℹ️ Polish |
+| **Tests Passing** | **120/120** | ✅ |
+| **Overall Verdict** | — | **ACCEPTED** |
 
-**Story Status:** Not ready for acceptance. AC4 implementation is incomplete for production scenarios.
+---
+
+## Recommendations for Future Work
+
+1. **Code Polish (non-blocking):**
+   - Replace hasattr() check with direct field access (LOW-1)
+   - Add comment explaining device_id serialization decision (LOW-2)
+   - Clarify "priority" terminology in logs (LOW-3)
+
+2. **Documentation:**
+   - Document that "remove" notifications can be sent for never-added batteries (MED-1)
+   - Document why device_id is not serialized in as_dict() (LOW-2)
+
+3. **Testing (non-blocking):**
+   - Add test validating subscriber notification events (MED-1)
+   - Consider adding edge case tests for concurrent updates
 
 ---
 
 ## Next Steps
 
-1. **Developer:** Fix CRIT-1 and CRIT-2, add test coverage for HIGH-1
-2. **Code Review:** Re-review after fixes
-3. **QA:** Validate AC4 behavior across startup + incremental updates
-4. **Story Acceptance:** Can proceed only after all critical issues resolved
+✅ **Code Review Complete** — Story is ready for acceptance.
+
+1. **QA:** Run 2-1-numeric-battery QA test suite
+2. **Story Acceptance:** Can proceed once QA completes
+3. **Deployment:** Ready for deployment (all critical issues resolved, all tests pass)
 
 ---
 
-**Report Generated:** 2026-02-20 23:10 PST  
-**Reviewer Model:** anthropic/claude-haiku-4-5
+**Report Generated:** 2026-02-20 23:30 PST  
+**Reviewer Model:** anthropic/claude-haiku-4-5  
+**Review Type:** Re-review (post-AC4 architectural fix)  
+**Status:** ✅ **READY FOR ACCEPTANCE**
