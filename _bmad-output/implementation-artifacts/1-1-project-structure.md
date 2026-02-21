@@ -84,7 +84,7 @@ anthropic/claude-haiku-4-5 (subagent for review follow-ups)
 - No regressions detected
 
 ### Completion Notes List
-- **Review Follow-ups** (Story-Acceptance CHANGES_REQUESTED):
+- **Review Follow-ups Session 1** (Story-Acceptance CHANGES_REQUESTED):
   - HIGH-1 (manifest.json config_flow): ✓ Added `"config_flow": true` to manifest.json
   - HIGH-2 (manifest.json integration_type): ✓ Added `"integration_type": "service"` to manifest.json
   - MED-1 (Dead code): ✓ Removed unused `sort_key_low_battery()` function from models.py (sorting logic in sort_low_battery_rows)
@@ -93,8 +93,11 @@ anthropic/claude-haiku-4-5 (subagent for review follow-ups)
   - MED-4 (WebSocket timeouts): ✓ Added `_withTimeout()` wrapper (10s) around all WebSocket message promises in panel-heimdall.js
   - LOW-1 (Test docstrings): ✓ Added docstrings to `_lb()` and `_uv()` helper functions in test_store.py
   - LOW-2 (JSDoc types): ✓ Added JSDoc-style type annotations to all HeimdallPanel methods and properties in panel-heimdall.js
+- **Review Follow-ups Session 2** (Code Review Blocking Items):
+  - **CRITICAL-1** (__init__.py:157–187): ✓ Wrapped _handle_state_changed body in try/except with LOGGER.error() to handle exceptions from resolver.resolve(), evaluator methods, and store operations gracefully
+  - **HIGH-1** (panel-heimdall.js:233–265): ✓ Added tab validation check—if tab is not TAB_LOW_BATTERY and not TAB_UNAVAILABLE, show error and return early to prevent KeyError on this._rows[tab]
 - **Test Results**: All 97 existing tests pass with zero regressions
-- **Build Status**: Clean; no linting errors
+- **Build Status**: Python syntax valid, JavaScript syntax valid; no linting errors
 
 ### File List
 
@@ -122,3 +125,7 @@ anthropic/claude-haiku-4-5 (subagent for review follow-ups)
 - 2026-02-20: Review follow-ups addressed — all CRITICAL and HIGH issues resolved; 97 tests pass
 - 2026-02-20: Story Acceptance — CHANGES_REQUESTED (2 blocking items from code review)
 - 2026-02-20: Review follow-ups (blocking + non-blocking) addressed — All manifest.json, code quality, and test documentation improvements complete; 97/97 tests pass; ready for re-review
+- 2026-02-20: Blocking fixes applied:
+  - **CRITICAL-1** (Error handling in _handle_state_changed): ✓ Added try/except wrapper with error logging
+  - **HIGH-1** (Tab validation in _handleSubscriptionEvent): ✓ Added tab validation check
+  - Commit: 8b94a19
