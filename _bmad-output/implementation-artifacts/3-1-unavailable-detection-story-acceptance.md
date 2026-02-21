@@ -1,17 +1,14 @@
 # Story Acceptance Report
 
 **Story:** 3-1-unavailable-detection  
-**Title:** Unavailable Detection  
 **Date:** 2026-02-21  
-**Judge:** Story Acceptance Agent
+**Judge:** Story Acceptance Agent  
 
 ---
 
-## Overall Verdict: 🔄 CHANGES_REQUESTED
+## Overall Verdict: ✅ ACCEPTED
 
-The story has blocking issues that must be resolved before acceptance. Code Review identified critical violations of Acceptance Criterion AC4 (dataset versioning), along with gaps in test coverage. While QA testing and UX review both passed, the architectural issue prevents this story from being marked complete.
-
-**Summary:** Re-run dev-story to address the 5 blocking items below, then re-run all reviewers (code-review, qa-tester, ux-review) and story-acceptance.
+All three reviewers passed (code review, QA tester, UX review). No CRITICAL or HIGH issues found. All 5 prior blocking items from the rework have been fixed and verified. Story marked **done**.
 
 ---
 
@@ -19,75 +16,85 @@ The story has blocking issues that must be resolved before acceptance. Code Revi
 
 | Reviewer | Report | Overall Verdict | Blocking Items |
 |----------|--------|-----------------|----------------|
-| Code Review | [3-1-unavailable-detection-code-review.md](3-1-unavailable-detection-code-review.md) | 🔴 CHANGES_REQUESTED | 5 (3 CRITICAL + 2 HIGH) |
+| Code Review | [3-1-unavailable-detection-code-review.md](3-1-unavailable-detection-code-review.md) | ✅ ACCEPTED | 0 |
 | QA Tester | [3-1-unavailable-detection-qa-tester.md](3-1-unavailable-detection-qa-tester.md) | ✅ ACCEPTED | 0 |
 | UX Review | [3-1-unavailable-detection-ux-review.md](3-1-unavailable-detection-ux-review.md) | ✅ ACCEPTED | 0 |
-| **Total blocking** | | | **5** |
+| **Total blocking** | | | **0** |
 
 ---
 
 ## 🚫 Blocking Items (Must Fix)
 
-All items are from Code Review. These prevent story acceptance and must be resolved before re-review.
-
-### From Code Review
-
-| ID | Severity | Finding | File:Line | Reference |
-|----|----------|---------|-----------|-----------|
-| CRIT-1 | 🔴 CRITICAL | AC4 Violation: `upsert_unavailable()` modifies dataset but does NOT increment `_unavailable_version`. Cache invalidation will fail for incremental state changes. | store.py:234-250 | [CRIT-1](3-1-unavailable-detection-code-review.md#-critical-issues) |
-| CRIT-2 | 🔴 CRITICAL | AC4 Violation: `remove_unavailable()` modifies dataset but does NOT increment `_unavailable_version`. Frontend cache will not invalidate. | store.py:252-269 | [CRIT-2](3-1-unavailable-detection-code-review.md#-critical-issues) |
-| CRIT-3 | 🔴 CRITICAL | Test Coverage Gap: `test_unavailable_version_increments()` only tests bulk_set, not incremental operations (upsert/remove). Missing verification that versions increment during state_changed event handling. | test_event_subscription.py:~293-304 | [CRIT-3](3-1-unavailable-detection-code-review.md#-critical-issues) |
-| HIGH-1 | 🟠 HIGH | SAME ISSUE IN LOW BATTERY: `upsert_low_battery()` and `remove_low_battery()` do NOT increment `_low_battery_version` on incremental changes, violating versioning design for cache invalidation. This affects both datasets. | store.py:106-184, 188-201 | [HIGH-1](3-1-unavailable-detection-code-review.md#-high-issues) |
-| HIGH-2 | 🟠 HIGH | Incremental Versioning Design Flaw: Only `bulk_set_*()` increments versions, but `_handle_state_changed()` calls `upsert_*()` and `remove_*()` for real-time updates. This breaks cache invalidation for 99% of mutations after initial load. Frontend will serve stale data. | store.py + __init__.py | [HIGH-2](3-1-unavailable-detection-code-review.md#-high-issues) |
-
-### Resolution Strategy
-
-**Root Cause:** Versioning was added only to `bulk_set_*()` methods, overlooking that state_changed event handler calls `upsert_*()` and `remove_*()` for incremental updates.
-
-**Fix Required:**
-1. Increment `self._unavailable_version += 1` in both `upsert_unavailable()` and `remove_unavailable()` methods (fixes CRIT-1, CRIT-2)
-2. Increment `self._low_battery_version += 1` in both `upsert_low_battery()` and `remove_low_battery()` methods (fixes HIGH-1)
-3. Add comprehensive tests verifying versions increment on incremental operations:
-   - `test_unavailable_version_increments_on_upsert()` — version increments when entity becomes unavailable via state_changed
-   - `test_unavailable_version_increments_on_remove()` — version increments when entity becomes available via state_changed
-   - (fixes CRIT-3, enforces HIGH-2)
-
-**Alternatively:** Move version increment to a common `_mutate_dataset()` wrapper called by all mutation methods (upsert/remove/bulk_set) to ensure consistency.
+None — all reviewers accepted with zero outstanding critical or high issues.
 
 ---
 
 ## ℹ️ Non-Blocking Observations (Awareness Only)
 
-These do not affect acceptance but should be addressed at developer discretion.
-
-### Code Review (MEDIUM / LOW)
-
-| ID | Severity | Finding | Reference |
-|----|----------|---------|-----------|
-| MED-1 | 🟡 MEDIUM | Logging Style Inconsistency: `_handle_state_changed()` uses f-string logging instead of Google-style format consistent with codebase. | [MED-1](3-1-unavailable-detection-code-review.md#-medium-issues) |
-| MED-2 | 🟡 MEDIUM | Test Documentation Gap: Test name should clarify if it covers only bulk_set or all paths. | [MED-2](3-1-unavailable-detection-code-review.md#-medium-issues) |
-| LOW-1 | 🟢 LOW | Code Organization: Consider extracting shared dataset management logic into helper class to prevent future divergence. | [LOW-1](3-1-unavailable-detection-code-review.md#-low-issues) |
+### Code Review (MEDIUM)
+- **MED-1**: Logging style inconsistency (f-string format) in `_handle_state_changed()` — Not blocking per code review standards; can be addressed in follow-up story if needed
 
 ### QA Tester
-
-**None** — All findings passed acceptance criteria verification.
+No MEDIUM or LOW findings. All 153 tests pass (100% success rate).
 
 ### UX Review
-
-**None** — Implementation is exemplary with zero accessibility or design issues.
+No MEDIUM or LOW findings. Implementation exceeds UX Design Specification.
 
 ---
 
-## Acceptance Criteria Status
+## Prior Rework Items Verification
 
-Per Code Review findings:
+This story was returned for rework on 2026-02-21 02:50 PST with 5 blocking items. All have been fixed and verified:
 
-| AC | Status | Evidence | Issue |
-|----|--------|----------|-------|
-| AC1: Detect unavailable state changes | ✅ PASS | `evaluate_unavailable_state()` correct | None |
-| AC2: Add to dataset within 5 seconds | ✅ PASS | Synchronous handling <100ms | None |
-| AC3: Remove when state changes | ✅ PASS | `remove_unavailable()` correctly called | None |
-| AC4: Dataset versioning increments | ❌ **FAIL** | Versions only increment on `bulk_set()`, not on incremental `upsert()`/`remove()` | CRIT-1, CRIT-2, HIGH-2 |
+| Prior ID | Prior Severity | Issue | Fix Status | Verification |
+|----------|---|---|---|---|
+| CRIT-1 | 🔴 CRITICAL | upsert_unavailable() missing version increment | ✅ FIXED | Code Review: "Added `self._unavailable_version += 1` at store.py:244"; QA: Test `test_unavailable_version_increments_on_upsert()` passes |
+| CRIT-2 | 🔴 CRITICAL | remove_unavailable() missing version increment | ✅ FIXED | Code Review: "Added `self._unavailable_version += 1` at store.py:266"; QA: Test `test_unavailable_version_increments_on_remove()` passes |
+| CRIT-3 | 🔴 CRITICAL | Test coverage gap for incremental versioning | ✅ FIXED | Code Review: "5 new tests in TestVersioningOnIncrementalOperations"; QA: All 5 tests pass including `test_incremental_versioning_for_real_world_event_stream()` |
+| HIGH-1 | 🟠 HIGH | Low battery dataset versioning not incremented | ✅ FIXED | Code Review: "upsert_low_battery() and remove_low_battery() now increment _low_battery_version"; QA: Tests `test_low_battery_version_increments_on_upsert()` and `test_low_battery_version_increments_on_remove()` pass |
+| HIGH-2 | 🟠 HIGH | Incremental versioning design flaw | ✅ FIXED | Code Review: "Version increments now on ALL mutations, not just bulk_set"; QA: Real-world event stream test verifies 6 increments for 1 bulk + 5 events |
+
+---
+
+## Acceptance Criteria Verification Summary
+
+| AC | Criterion | Code Review | QA Tester | UX Review | Overall |
+|----|-----------|---|---|---|---|
+| AC1 | System detects unavailable state changes | ✅ PASS | ✅ PASS | N/A | ✅ PASS |
+| AC2 | Entity added to dataset within 5 seconds | ✅ PASS (actual: <0.1ms) | ✅ PASS | N/A | ✅ PASS |
+| AC3 | Entity removed when state changes from unavailable | ✅ PASS | ✅ PASS | N/A | ✅ PASS |
+| AC4 | Dataset versioning increments on changes | ✅ PASS (REWORKED) | ✅ PASS (153/153 tests) | N/A | ✅ PASS |
+
+---
+
+## Quality Assessment
+
+### Code Quality ✅
+- **Strengths:**
+  - Version increment logic is correct and consistent across all mutation methods
+  - Test coverage is comprehensive (5 new tests + existing tests)
+  - Architecture alignment with ADR-002 (Event-Driven Backend Cache)
+  - No regressions: 153 tests PASS (148 original + 5 new)
+  - Surgical, focused fixes with no breaking changes
+
+- **Observations:**
+  - MED-1 (logging style inconsistency) noted but non-blocking
+  - Code follows Epic 2 recommendations on AC4-type invariant enforcement
+
+### QA Testing ✅
+- **Test Results:** 153/153 passing (100%)
+- **Test Coverage:** All 4 AC criteria verified with dedicated test cases
+- **Edge Cases:** Handled (empty inputs, rapid state changes, subscriber exceptions, remove non-existent entities)
+- **Performance:** Event handler latency <0.1ms (far exceeds 5-second requirement)
+- **Regressions:** Zero — all existing tests continue to pass
+- **Bugs Found:** 0
+
+### UX Review ✅
+- **Accessibility:** WCAG 2.1 AA compliant with zero violations
+- **Responsive Design:** Pixel-perfect across desktop/tablet/mobile breakpoints
+- **Design Spec Alignment:** Exceeds specification requirements
+- **User Interactions:** Smooth, responsive, properly error-handled
+- **HA Integration:** Respects theme variables, dark mode support verified
 
 ---
 
@@ -95,37 +102,68 @@ Per Code Review findings:
 
 | Field | Before | After |
 |-------|--------|-------|
-| Story file status | `review` | `in-progress` |
-| sprint-status.yaml | `review` | `in-progress` |
-| Story file change log | Previous entry | Added: "2026-02-21 02:50: Story Acceptance — CHANGES_REQUESTED (5 blocking items)" |
+| Story file status | review | done |
+| sprint-status.yaml | in-progress | done |
+
+---
+
+## Files Modified
+
+- `3-1-unavailable-detection.md` → Status: review → done, Changelog updated
+- `sprint-status.yaml` → Story 3-1 status: in-progress → done
+- `3-1-unavailable-detection-story-acceptance.md` → This report (created)
+
+---
+
+## Commit Information
+
+Commit will be prepared by the accepting agent with message:
+
+```
+chore(3.1): story acceptance — ACCEPTED
+
+Story 3-1-unavailable-detection:
+- Code Review: ACCEPTED (all 5 prior blocking items fixed & verified)
+- QA Tester: ACCEPTED (153/153 tests passing, 0 bugs)
+- UX Review: ACCEPTED (WCAG 2.1 AA compliant, 0 issues)
+- Blocking items: 0
+- Status → done
+```
+
+---
+
+## Lessons for Future Stories
+
+1. **AC4-Type Invariants:** This story demonstrates the importance of testing both batch AND incremental operations. Initial implementation only versioned on bulk operations, missing the incremental path. Future stories with state-consistency ACs should include both test types from day 1.
+
+2. **Rework Validation:** The rework was thoroughly validated by all three reviewers, confirming that fixes were correct and complete. The acceptance gate worked as designed — blocking items were identified, fixed, and verified before final acceptance.
+
+3. **Synchronous Cache Invalidation:** ADR-002 pattern (version increment on every mutation) is now proven effective. All 153 tests pass with this pattern, and real-world event streams maintain correct cache invalidation across incremental updates.
+
+---
+
+## Quality Gates - Final Verification ✅
+
+- [x] All 3 review reports present (code-review, qa-tester, ux-review)
+- [x] Overall Verdict extracted from each report (all ACCEPTED)
+- [x] Blocking items correctly identified (0 found; all prior items verified as fixed)
+- [x] Non-blocking items documented separately
+- [x] Story status updated in story file (review → done)
+- [x] Story status updated in sprint-status.yaml (in-progress → done)
+- [x] Acceptance report written with working MD links to source reports
+- [x] Files ready for git commit
 
 ---
 
 ## Next Steps
 
-1. **Developer Action:** Run `dev-story 3-1-unavailable-detection` to address all 5 blocking items
-   - Increment versions in upsert/remove methods
-   - Add test coverage for incremental versioning
-   - Fix logging style (MED-1)
-
-2. **Review Cycle:** Once fixes are committed, re-run:
-   - `code-review 3-1-unavailable-detection` — verify fix resolves all CRITICAL/HIGH
-   - `qa-tester 3-1-unavailable-detection` — verify new tests pass
-   - `ux-review 3-1-unavailable-detection` — no UX changes expected, should remain ACCEPTED
-   - `story-acceptance 3-1-unavailable-detection` — final acceptance
-
-3. **Outcome:** If all reviewers pass, story will be marked `done` and marked ready for next epic.
+1. **Commit Files** → Story files + acceptance report committed to git
+2. **Push to Remote** → Changes pushed to GitHub
+3. **Backlog Ready** → Epic 3 is now 1/2 complete (3-1 done, 3-2 awaiting dev)
+4. **Next Story** → Create-story can now be run for story 3-2 (Metadata Enrichment) or story 4-1 (Tabbed Interface)
 
 ---
 
-## Report Metadata
-
-**Judge Confidence:** High  
-**Reasoning:** Clear architectural issue identified by code review; backed by QA test analysis (QA confirmed versions only increment on bulk_set). No ambiguity in blocking criteria.
-
-**Git Status:** Changes staged and ready for commit (story status updated in both story file and sprint-status.yaml)
-
----
-
-**Report Generated:** 2026-02-21 02:50 PST  
-**Story Acceptance Agent**
+**Report Status:** Complete ✅  
+**Acceptance Judge:** Story Acceptance Agent  
+**Date:** 2026-02-21 02:58 PST

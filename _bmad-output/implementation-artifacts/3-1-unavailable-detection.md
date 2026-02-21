@@ -1,7 +1,7 @@
 # Story 3.1: Unavailable Detection
 
 ## Status
-review
+done
 
 ## User Story
 As a Home Assistant user  
@@ -239,6 +239,11 @@ N/A - All issues resolved. Code review blocking items (CRIT-1, CRIT-2, HIGH-1, H
 | `tests/test_event_subscription.py` | Verify | Contains integration tests for event handling of unavailable entities |
 
 ## Change Log
+- 2026-02-21 02:58 PST: Story Acceptance — ACCEPTED
+  - Code Review: ACCEPTED (all 5 prior blocking items fixed & verified)
+  - QA Tester: ACCEPTED (153/153 tests passing, 0 bugs, all AC verified)
+  - UX Review: ACCEPTED (WCAG 2.1 AA compliant, 0 issues)
+  - Status: review → done
 - 2026-02-21 02:52 PST: Story Rework Complete — Code Review Blocking Items Resolved
   - Resolved CRIT-1: upsert_unavailable() now increments _unavailable_version
   - Resolved CRIT-2: remove_unavailable() now increments _unavailable_version
