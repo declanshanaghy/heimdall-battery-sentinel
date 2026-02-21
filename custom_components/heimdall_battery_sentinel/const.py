@@ -99,3 +99,7 @@ STORAGE_VERSION = 1
 DATA_STORE = "store"
 DATA_REGISTRY = "registry"
 DATA_WS_SUBSCRIPTIONS = "ws_subscriptions"
+
+# Metadata display values for missing data (AC2, AC3 of story 3-2)
+METADATA_UNKNOWN = "Unknown"
+METADATA_UNASSIGNED = "Unassigned"

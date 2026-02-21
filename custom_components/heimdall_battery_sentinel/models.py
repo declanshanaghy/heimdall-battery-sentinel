@@ -6,6 +6,8 @@ from datetime import datetime, timezone
 from typing import Optional
 
 from .const import (
+    METADATA_UNASSIGNED,
+    METADATA_UNKNOWN,
     SEVERITY_CRITICAL,
     SEVERITY_CRITICAL_ICON,
     SEVERITY_CRITICAL_RATIO_THRESHOLD,
@@ -42,7 +44,11 @@ class LowBatteryRow:
     updated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
     def as_dict(self) -> dict:
-        """Serialize to dictionary for websocket responses."""
+        """Serialize to dictionary for websocket responses.
+
+        Per AC2 (story 3-2): manufacturer/model display "Unknown" if unavailable.
+        Per AC3 (story 3-2): area displays "Unassigned" if unavailable.
+        """
         return {
             "entity_id": self.entity_id,
             "friendly_name": self.friendly_name,
@@ -50,9 +56,9 @@ class LowBatteryRow:
             "battery_numeric": self.battery_numeric,
             "severity": self.severity,
             "severity_icon": self.severity_icon,
-            "manufacturer": self.manufacturer,
-            "model": self.model,
-            "area": self.area,
+            "manufacturer": self.manufacturer or METADATA_UNKNOWN,
+            "model": self.model or METADATA_UNKNOWN,
+            "area": self.area or METADATA_UNASSIGNED,
             "updated_at": self.updated_at.isoformat(),
         }
 
@@ -69,13 +75,17 @@ class UnavailableRow:
     updated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
     def as_dict(self) -> dict:
-        """Serialize to dictionary for websocket responses."""
+        """Serialize to dictionary for websocket responses.
+
+        Per AC2 (story 3-2): manufacturer/model display "Unknown" if unavailable.
+        Per AC3 (story 3-2): area displays "Unassigned" if unavailable.
+        """
         return {
             "entity_id": self.entity_id,
             "friendly_name": self.friendly_name,
-            "manufacturer": self.manufacturer,
-            "model": self.model,
-            "area": self.area,
+            "manufacturer": self.manufacturer or METADATA_UNKNOWN,
+            "model": self.model or METADATA_UNKNOWN,
+            "area": self.area or METADATA_UNASSIGNED,
             "updated_at": self.updated_at.isoformat(),
         }
 

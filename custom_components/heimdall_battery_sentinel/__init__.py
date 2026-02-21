@@ -91,6 +91,27 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         )
     )
 
+    # Subscribe to registry update events to invalidate metadata cache
+    # Per ADR-006: Metadata cache must be invalidated when registries change
+    entry.async_on_unload(
+        hass.bus.async_listen(
+            "device_registry_updated",
+            lambda event: _handle_registry_updated(resolver),
+        )
+    )
+    entry.async_on_unload(
+        hass.bus.async_listen(
+            "area_registry_updated",
+            lambda event: _handle_registry_updated(resolver),
+        )
+    )
+    entry.async_on_unload(
+        hass.bus.async_listen(
+            "entity_registry_updated",
+            lambda event: _handle_registry_updated(resolver),
+        )
+    )
+
     # Listen for config entry options updates (threshold changes)
     entry.async_on_unload(entry.add_update_listener(_async_update_options))
 
@@ -155,6 +176,20 @@ async def _populate_initial_datasets(
         len(low_battery_rows),
         len(unavailable_rows),
     )
+
+
+def _handle_registry_updated(resolver: MetadataResolver) -> None:
+    """Handle registry update events and invalidate metadata cache.
+
+    Per ADR-006: When device, area, or entity registries change,
+    the metadata cache must be invalidated so that subsequent resolves
+    pick up the latest metadata.
+
+    Args:
+        resolver: MetadataResolver instance to invalidate.
+    """
+    LOGGER.debug("Registry updated event detected; invalidating metadata cache")
+    resolver.invalidate_cache()
 
 
 def _handle_state_changed(

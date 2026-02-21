@@ -649,3 +649,197 @@ class TestStory23SeverityCalculation:
         state = _battery_state("sensor.th20_notice", "15", unit="%")
         row = evaluate_battery_state(state, threshold=20)
         assert row.severity == SEVERITY_NOTICE
+
+
+class TestStory32MetadataEnrichment:
+    """Test metadata enrichment for battery/unavailable rows (Story 3-2, AC1-AC5).
+
+    Per ADR-006 and story 3-2 acceptance criteria:
+    - AC1: Resolve and display manufacturer, model, area from device/area registries
+    - AC2: If manufacturer/model unavailable, display "Unknown"
+    - AC3: If area unavailable, display "Unassigned"
+    - AC4: Metadata must update in real-time when registries change
+    - AC5: Implementation follows ADR-006 metadata resolution rules
+    """
+
+    def test_ac1_low_battery_with_complete_metadata(self):
+        """AC1: Low battery row includes manufacturer, model, area."""
+        state = _battery_state("sensor.battery1", "10", unit="%")
+        row = evaluate_battery_state(
+            state,
+            threshold=15,
+            manufacturer="Acme Corp",
+            model="BatteryBox 5000",
+            area="Living Room"
+        )
+        assert row is not None
+        assert row.manufacturer == "Acme Corp"
+        assert row.model == "BatteryBox 5000"
+        assert row.area == "Living Room"
+
+    def test_ac1_unavailable_with_complete_metadata(self):
+        """AC1: Unavailable row includes manufacturer, model, area."""
+        state = _state("light.bedroom_lamp", STATE_UNAVAILABLE)
+        row = evaluate_unavailable_state(
+            state,
+            manufacturer="IKEA",
+            model="TRADFRI",
+            area="Bedroom"
+        )
+        assert row is not None
+        assert row.manufacturer == "IKEA"
+        assert row.model == "TRADFRI"
+        assert row.area == "Bedroom"
+
+    def test_ac2_low_battery_missing_manufacturer_serializes_to_unknown(self):
+        """AC2: Missing manufacturer serializes to 'Unknown' in as_dict()."""
+        state = _battery_state("sensor.battery1", "10", unit="%")
+        row = evaluate_battery_state(
+            state,
+            threshold=15,
+            manufacturer=None,
+            model="Model XYZ",
+            area="Kitchen"
+        )
+        assert row is not None
+        assert row.manufacturer is None  # Stored as None
+        row_dict = row.as_dict()
+        assert row_dict["manufacturer"] == "Unknown"  # Displayed as "Unknown"
+
+    def test_ac2_low_battery_missing_model_serializes_to_unknown(self):
+        """AC2: Missing model serializes to 'Unknown' in as_dict()."""
+        state = _battery_state("sensor.battery2", "12", unit="%")
+        row = evaluate_battery_state(
+            state,
+            threshold=15,
+            manufacturer="SomeBrand",
+            model=None,
+            area="Hallway"
+        )
+        assert row is not None
+        assert row.model is None  # Stored as None
+        row_dict = row.as_dict()
+        assert row_dict["model"] == "Unknown"  # Displayed as "Unknown"
+
+    def test_ac3_low_battery_missing_area_serializes_to_unassigned(self):
+        """AC3: Missing area serializes to 'Unassigned' in as_dict()."""
+        state = _battery_state("sensor.battery3", "8", unit="%")
+        row = evaluate_battery_state(
+            state,
+            threshold=15,
+            manufacturer="Brand A",
+            model="Model A",
+            area=None
+        )
+        assert row is not None
+        assert row.area is None  # Stored as None
+        row_dict = row.as_dict()
+        assert row_dict["area"] == "Unassigned"  # Displayed as "Unassigned"
+
+    def test_ac2_unavailable_missing_manufacturer_serializes_to_unknown(self):
+        """AC2: Unavailable row missing manufacturer serializes to 'Unknown'."""
+        state = _state("sensor.temp1", STATE_UNAVAILABLE)
+        row = evaluate_unavailable_state(
+            state,
+            manufacturer=None,
+            model="Model B",
+            area="Garage"
+        )
+        assert row is not None
+        row_dict = row.as_dict()
+        assert row_dict["manufacturer"] == "Unknown"
+
+    def test_ac3_unavailable_missing_area_serializes_to_unassigned(self):
+        """AC3: Unavailable row missing area serializes to 'Unassigned'."""
+        state = _state("sensor.temp2", STATE_UNAVAILABLE)
+        row = evaluate_unavailable_state(
+            state,
+            manufacturer="Brand B",
+            model="Model B",
+            area=None
+        )
+        assert row is not None
+        row_dict = row.as_dict()
+        assert row_dict["area"] == "Unassigned"
+
+    def test_ac1_batch_evaluate_with_metadata_resolver_function(self):
+        """AC1: batch_evaluate with metadata_fn resolves metadata for all entities."""
+        states = [
+            _battery_state("sensor.batt1", "10", unit="%"),
+            _battery_state("sensor.batt2", "8", unit="%"),
+            _state("sensor.temp", STATE_UNAVAILABLE),
+        ]
+
+        def mock_metadata_fn(entity_id):
+            # Return extended format: (manufacturer, model, area, device_id)
+            metadata_map = {
+                "sensor.batt1": ("Acme", "BatteryBox", "Kitchen", "device_123"),
+                "sensor.batt2": (None, "Unknown Model", "Living Room", "device_456"),
+                "sensor.temp": ("Philips", "Sensor", None, "device_789"),
+            }
+            return metadata_map.get(entity_id, (None, None, None, None))
+
+        low_battery, unavailable = BatteryEvaluator(15).batch_evaluate(states, mock_metadata_fn)
+
+        # Verify low battery rows have metadata
+        assert len(low_battery) == 2
+        assert low_battery[0].manufacturer == "Acme"
+        assert low_battery[0].model == "BatteryBox"
+        assert low_battery[0].area == "Kitchen"
+        assert low_battery[1].manufacturer is None
+        assert low_battery[1].model == "Unknown Model"
+        assert low_battery[1].area == "Living Room"
+
+        # Verify unavailable rows have metadata
+        assert len(unavailable) == 1
+        assert unavailable[0].manufacturer == "Philips"
+        assert unavailable[0].model == "Sensor"
+        assert unavailable[0].area is None
+
+    def test_ac1_metadata_propagated_through_evaluator_methods(self):
+        """AC1: Metadata propagates through BatteryEvaluator methods."""
+        state = _battery_state("sensor.test", "12", unit="%")
+        evaluator = BatteryEvaluator(threshold=15)
+
+        row = evaluator.evaluate_low_battery(
+            state,
+            manufacturer="TestMfg",
+            model="TestModel",
+            area="TestArea"
+        )
+
+        assert row is not None
+        assert row.manufacturer == "TestMfg"
+        assert row.model == "TestModel"
+        assert row.area == "TestArea"
+
+    def test_ac2_all_metadata_missing_batch_evaluate(self):
+        """AC2, AC3: Batch evaluate handles entities with no metadata."""
+        states = [_battery_state("sensor.orphan", "5", unit="%")]
+
+        def metadata_fn(entity_id):
+            return (None, None, None, None)  # No metadata available
+
+        low_battery, _ = BatteryEvaluator(15).batch_evaluate(states, metadata_fn)
+
+        assert len(low_battery) == 1
+        row_dict = low_battery[0].as_dict()
+        assert row_dict["manufacturer"] == "Unknown"
+        assert row_dict["model"] == "Unknown"
+        assert row_dict["area"] == "Unassigned"
+
+    def test_ac1_textual_low_battery_with_metadata(self):
+        """AC1: Textual low battery also includes metadata."""
+        state = _battery_state("sensor.text_batt", "low", unit=None)
+        row = evaluate_battery_state(
+            state,
+            threshold=15,
+            manufacturer="TextBrand",
+            model="TextModel",
+            area="TextRoom"
+        )
+        assert row is not None
+        assert row.battery_display == "low"
+        assert row.manufacturer == "TextBrand"
+        assert row.model == "TextModel"
+        assert row.area == "TextRoom"
