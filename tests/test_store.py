@@ -270,6 +270,114 @@ class TestGetPage:
 
 # ── Subscriber management ─────────────────────────────────────────────────────
 
+# ── Versioning on incremental operations ──────────────────────────────────────
+
+class TestVersioningOnIncrementalOperations:
+    """Verify dataset versions increment on incremental upsert/remove operations.
+    
+    AC4 requirement: Cache invalidation must work for incremental updates 
+    (99% of mutations via state_changed events), not just bulk_set.
+    
+    These tests verify the fix for code review CRIT-1, CRIT-2, HIGH-1, HIGH-2.
+    """
+
+    def test_unavailable_version_increments_on_upsert(self):
+        """CRIT-1 fix: Version increments when entity becomes unavailable via upsert."""
+        store = HeimdallStore()
+        initial_version = store.unavailable_version
+        
+        # Upsert an unavailable entity (simulating _handle_state_changed event)
+        store.upsert_unavailable(_uv("light.lamp"))
+        
+        # AC4: Version must increment for cache invalidation
+        assert store.unavailable_version == initial_version + 1, \
+            "CRIT-1 VIOLATION: upsert_unavailable() must increment _unavailable_version for AC4 (cache invalidation)"
+
+    def test_unavailable_version_increments_on_remove(self):
+        """CRIT-2 fix: Version increments when entity becomes available via remove."""
+        store = HeimdallStore()
+        
+        # Setup: Add an entity
+        store.upsert_unavailable(_uv("light.lamp"))
+        version_before_remove = store.unavailable_version
+        
+        # Remove the entity (simulating _handle_state_changed event)
+        store.remove_unavailable("light.lamp")
+        
+        # AC4: Version must increment for cache invalidation
+        assert store.unavailable_version == version_before_remove + 1, \
+            "CRIT-2 VIOLATION: remove_unavailable() must increment _unavailable_version for AC4 (cache invalidation)"
+
+    def test_low_battery_version_increments_on_upsert(self):
+        """HIGH-1 fix: Version increments when entity becomes low battery via upsert."""
+        store = HeimdallStore()
+        initial_version = store.low_battery_version
+        
+        # Upsert a low battery entity (simulating _handle_state_changed event)
+        store.upsert_low_battery(_lb("sensor.battery"))
+        
+        # AC4: Version must increment for cache invalidation
+        assert store.low_battery_version == initial_version + 1, \
+            "HIGH-1 VIOLATION: upsert_low_battery() must increment _low_battery_version for AC4 (cache invalidation)"
+
+    def test_low_battery_version_increments_on_remove(self):
+        """HIGH-1 fix: Version increments when entity becomes high battery via remove."""
+        store = HeimdallStore()
+        
+        # Setup: Add an entity
+        store.upsert_low_battery(_lb("sensor.battery"))
+        version_before_remove = store.low_battery_version
+        
+        # Remove the entity (simulating _handle_state_changed event)
+        store.remove_low_battery("sensor.battery")
+        
+        # AC4: Version must increment for cache invalidation
+        assert store.low_battery_version == version_before_remove + 1, \
+            "HIGH-1 VIOLATION: remove_low_battery() must increment _low_battery_version for AC4 (cache invalidation)"
+
+    def test_incremental_versioning_for_real_world_event_stream(self):
+        """HIGH-2 fix: Verify versioning works across realistic event stream.
+        
+        Scenario: Initial bulk load, then 5 state_changed events (real-world pattern).
+        Each event triggers upsert/remove, each must increment version for cache invalidation.
+        """
+        store = HeimdallStore()
+        
+        # Step 1: Initial bulk load (baseline)
+        store.bulk_set_unavailable([_uv("light.a"), _uv("light.b")])
+        v1 = store.unavailable_version
+        assert v1 == 1  # First increment from bulk_set
+        
+        # Step 2: state_changed event #1 - light.c becomes unavailable
+        store.upsert_unavailable(_uv("light.c"))
+        v2 = store.unavailable_version
+        assert v2 == v1 + 1, "Event #1: upsert must increment version"
+        
+        # Step 3: state_changed event #2 - light.a becomes available
+        store.remove_unavailable("light.a")
+        v3 = store.unavailable_version
+        assert v3 == v2 + 1, "Event #2: remove must increment version"
+        
+        # Step 4: state_changed event #3 - light.d becomes unavailable
+        store.upsert_unavailable(_uv("light.d"))
+        v4 = store.unavailable_version
+        assert v4 == v3 + 1, "Event #3: upsert must increment version"
+        
+        # Step 5: state_changed event #4 - light.b becomes available
+        store.remove_unavailable("light.b")
+        v5 = store.unavailable_version
+        assert v5 == v4 + 1, "Event #4: remove must increment version"
+        
+        # Step 6: state_changed event #5 - light.e becomes unavailable
+        store.upsert_unavailable(_uv("light.e"))
+        v6 = store.unavailable_version
+        assert v6 == v5 + 1, "Event #5: upsert must increment version"
+        
+        # Total: Should have incremented 6 times (1 bulk + 5 events)
+        assert store.unavailable_version == 6, \
+            f"HIGH-2 VIOLATION: Expected version=6 (1 bulk + 5 events), got {store.unavailable_version}"
+
+
 class TestSubscribers:
     def test_subscriber_called_on_upsert(self):
         store = HeimdallStore()

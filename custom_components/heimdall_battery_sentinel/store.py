@@ -101,6 +101,7 @@ class HeimdallStore:
         Per AC4: Enforces one battery per device (first by entity_id ascending).
         If the device_id is set and there are existing batteries for that device,
         removes any batteries with higher entity_ids.
+        Per AC4: Increments dataset version for cache invalidation on incremental updates.
 
         Args:
             row: The LowBatteryRow to upsert.
@@ -162,7 +163,9 @@ class HeimdallStore:
                             "dataset_version": self._low_battery_version,
                         })
                     
-                    _LOGGER.debug("Upserted low_battery row: %s (AC4 enforced for device %s)", row.entity_id, device_id)
+                    # Increment version for the upsert operation (AC4)
+                    self._low_battery_version += 1
+                    _LOGGER.debug("Upserted low_battery row: %s (AC4 enforced for device %s); version=%d", row.entity_id, device_id, self._low_battery_version)
                     self._notify_subscribers({
                         "type": "upsert",
                         "tab": TAB_LOW_BATTERY,
@@ -173,7 +176,8 @@ class HeimdallStore:
         
         # No device_id or no AC4 constraint: regular upsert
         self._low_battery[row.entity_id] = row
-        _LOGGER.debug("Upserted low_battery row: %s", row.entity_id)
+        self._low_battery_version += 1
+        _LOGGER.debug("Upserted low_battery row: %s; version=%d", row.entity_id, self._low_battery_version)
         self._notify_subscribers({
             "type": "upsert",
             "tab": TAB_LOW_BATTERY,
@@ -184,6 +188,8 @@ class HeimdallStore:
     def remove_low_battery(self, entity_id: str) -> bool:
         """Remove a low-battery row by entity_id.
 
+        Per AC4: Increments dataset version for cache invalidation on incremental updates.
+
         Args:
             entity_id: Entity ID to remove.
 
@@ -192,7 +198,8 @@ class HeimdallStore:
         """
         if entity_id in self._low_battery:
             del self._low_battery[entity_id]
-            _LOGGER.debug("Removed low_battery row: %s", entity_id)
+            self._low_battery_version += 1
+            _LOGGER.debug("Removed low_battery row: %s; version=%d", entity_id, self._low_battery_version)
             self._notify_subscribers({
                 "type": "remove",
                 "tab": TAB_LOW_BATTERY,
@@ -230,11 +237,14 @@ class HeimdallStore:
     def upsert_unavailable(self, row: UnavailableRow) -> None:
         """Insert or update an unavailable row.
 
+        Per AC4: Increments dataset version for cache invalidation on incremental updates.
+
         Args:
             row: The UnavailableRow to upsert.
         """
         self._unavailable[row.entity_id] = row
-        _LOGGER.debug("Upserted unavailable row: %s", row.entity_id)
+        self._unavailable_version += 1
+        _LOGGER.debug("Upserted unavailable row: %s; version=%d", row.entity_id, self._unavailable_version)
         self._notify_subscribers({
             "type": "upsert",
             "tab": TAB_UNAVAILABLE,
@@ -245,6 +255,8 @@ class HeimdallStore:
     def remove_unavailable(self, entity_id: str) -> bool:
         """Remove an unavailable row by entity_id.
 
+        Per AC4: Increments dataset version for cache invalidation on incremental updates.
+
         Args:
             entity_id: Entity ID to remove.
 
@@ -253,7 +265,8 @@ class HeimdallStore:
         """
         if entity_id in self._unavailable:
             del self._unavailable[entity_id]
-            _LOGGER.debug("Removed unavailable row: %s", entity_id)
+            self._unavailable_version += 1
+            _LOGGER.debug("Removed unavailable row: %s; version=%d", entity_id, self._unavailable_version)
             self._notify_subscribers({
                 "type": "remove",
                 "tab": TAB_UNAVAILABLE,
