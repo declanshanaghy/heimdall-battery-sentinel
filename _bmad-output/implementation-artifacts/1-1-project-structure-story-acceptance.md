@@ -4,31 +4,22 @@
 **Date:** 2026-02-20  
 **Judge:** Story Acceptance Agent
 
-## Overall Verdict: 🔄 CHANGES_REQUESTED
+## Overall Verdict: ✅ ACCEPTED
 
-The following blocking issues must be resolved before this story can be accepted. Re-run **dev-story** to address them, then re-run all reviewers and story-acceptance.
+All reviewers passed (or declared NOT_REQUIRED). No CRITICAL or HIGH issues found. Story marked **done**.
 
 ## Review Summary
 
 | Reviewer | Report | Overall Verdict | Blocking Items |
 |----------|--------|-----------------|----------------|
-| Code Review | [1-1-project-structure-code-review.md](1-1-project-structure-code-review.md) | CHANGES_REQUESTED | 2 |
+| Code Review | [1-1-project-structure-code-review.md](1-1-project-structure-code-review.md) | ACCEPTED | 0 |
 | QA Tester | [1-1-project-structure-qa-tester.md](1-1-project-structure-qa-tester.md) | ACCEPTED | 0 |
-| UX Review | [1-1-project-structure-ux-review.md](1-1-project-structure-ux-review.md) | NOT_REQUIRED | 0 |
-| **Total blocking** | | | **2** |
+| UX Review | [1-1-project-structure-ux-review.md](1-1-project-structure-ux-review.md) | NOT_REQUIRED | N/A |
+| **Total blocking** | | | **0** |
 
 ## 🚫 Blocking Items (Must Fix)
 
-### From Code Review
-
-| ID | Severity | Finding | Reference |
-|----|----------|---------|-----------|
-| HIGH-1 | HIGH | manifest.json missing "config_flow" key — required for HA to discover the config flow | [HIGH-1](1-1-project-structure-code-review.md#high-issues) |
-| HIGH-2 | HIGH | manifest.json missing "integration_type" field — recommended by HA 2024+ standards | [HIGH-2](1-1-project-structure-code-review.md#high-issues) |
-
-**Remediation Required:**
-1. Add `"config_flow": true` to `manifest.json` so HA integrations UI recognizes the config entry setup flow
-2. Add `"integration_type": "service"` (or appropriate type) per HA 2024+ documentation to prevent integration warnings in HA
+None — all reviewers accepted or declared NOT_REQUIRED.
 
 ## ℹ️ Non-Blocking Observations (Awareness Only)
 
@@ -38,57 +29,49 @@ These do not affect the decision. Address at developer discretion.
 
 | ID | Severity | Finding | Reference |
 |----|----------|---------|-----------|
-| MED-1 | MEDIUM | Dead code: sort_key_low_battery() function defined but never used | [MED-1](1-1-project-structure-code-review.md#medium-issues) |
-| MED-2 | MEDIUM | Silent exception handling: ValueError during numeric battery parsing has no log output | [MED-2](1-1-project-structure-code-review.md#medium-issues) |
-| MED-3 | MEDIUM | No error boundary for WebSocket connection loss in panel-heimdall.js | [MED-3](1-1-project-structure-code-review.md#medium-issues) |
-| MED-4 | MEDIUM | No timeout handling for WebSocket message promises in panel | [MED-4](1-1-project-structure-code-review.md#medium-issues) |
-| LOW-1 | LOW | Test helper functions lack docstrings | [LOW-1](1-1-project-structure-code-review.md#low-issues) |
-| LOW-2 | LOW | Panel-heimdall.js lacks JSDoc/TypeScript types | [LOW-2](1-1-project-structure-code-review.md#low-issues) |
-| LOW-3 | LOW | Minimal logging in integration startup | [LOW-3](1-1-project-structure-code-review.md#low-issues) |
+| MED-1 | MEDIUM | No debouncing on infinite scroll — rapid scrolling could trigger simultaneous load requests | [MED-1](1-1-project-structure-code-review.md#medium-issues) |
+| MED-2 | MEDIUM | No error recovery for initial WebSocket setup — blank UI if startup loads fail | [MED-2](1-1-project-structure-code-review.md#medium-issues) |
+| MED-3 | MEDIUM | Threshold change sends invalidation instead of re-evaluating rows | [MED-3](1-1-project-structure-code-review.md#medium-issues) |
+
+**Recommendation:** Address in Story 1.2 (Event Subscription System) or later optimization stories.
 
 ### QA Tester (MEDIUM / LOW)
 
-None — all tests passed with 100% pass rate (10/10).
+None detected.
 
 ### UX Review (MEDIUM / LOW)
 
-Not applicable — UX review declared NOT_REQUIRED for this infrastructure story.
+Not applicable — UX review deemed NOT_REQUIRED for infrastructure-only story.
 
 ## Status Update
 
 | Field | Before | After |
 |-------|--------|-------|
-| Story file status | review | in-progress |
-| sprint-status.yaml | review | in-progress |
+| Story file status | review | done |
+| sprint-status.yaml | review | done |
+
+## Acceptance Criteria Validation
+
+✅ **AC1:** Integration appears in HA with domain `heimdall_battery_sentinel`
+- Evidence: manifest.json defines domain; async_setup_entry and async_unload_entry implement proper lifecycle
+
+✅ **AC2:** Structure matches architecture document
+- Evidence: All 8 core Python modules + frontend panel present; directory structure verified by QA
+
+## Test Results
+
+✅ **Unit Tests:** 97/97 PASSED (100% pass rate)
+✅ **QA Tests:** 10/10 PASSED (100% pass rate)
+✅ **Code Review:** ACCEPTED (no blocking issues)
 
 ## Next Steps
 
-**Required:** Fix the two HIGH-priority manifest.json issues:
-1. Open `custom_components/heimdall_battery_sentinel/manifest.json`
-2. Add `"config_flow": true` 
-3. Add `"integration_type": "service"`
-4. Run dev-story to update and verify
-5. Re-run all three reviewers (code-review, qa-tester, ux-review)
-6. Re-run story-acceptance
-
-**Optional (Future Stories):** MEDIUM and LOW issues can be addressed in follow-up stories if prioritized separately, but addressing them now would improve code quality before downstream stories (1.2, 2.1, etc.) depend on this foundation.
-
-## Assessment
-
-**Positives:**
-- ✅ All 10 QA tests passed (100% pass rate)
-- ✅ Acceptance criteria fully satisfied (domain setup, structure matches architecture)
-- ✅ All previous CRITICAL issues from initial review have been resolved
-- ✅ Comprehensive test suite (97 tests across 4 files)
-- ✅ Core implementation is solid and well-tested
-
-**Blockers:**
-- ❌ manifest.json missing 2 modern HA metadata fields (HIGH priority)
-- These are config issues, not code quality issues — quick fixes
-
-**Recommendation:** These HIGH-priority fixes are straightforward and should be completed before merging to ensure proper Home Assistant integration discovery.
+1. ✅ Story Acceptance: **COMPLETE**
+2. → Deploy integration to production or proceed to Story 1.2 (Event Subscription System)
+3. → Developers may address non-blocking MEDIUM items in subsequent stories as prioritized
 
 ---
 
-**Report generated:** 2026-02-20  
-**Judge:** Story Acceptance Agent
+**Acceptance Confirmed By:** Story Acceptance Agent  
+**Date:** 2026-02-20  
+**Confidence:** HIGH

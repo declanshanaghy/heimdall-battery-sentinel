@@ -4,7 +4,7 @@
 - **Id:** 1-1
 - **Size:** 1 day
 - **Epic:** Core Integration Setup (Epic 1)
-- **Status:** review
+- **Status:** done
 
 ## Description
 Initialize the integration structure following Home Assistant custom integration patterns. Creates the foundational project structure with all required directories, files, and configurations to support the battery monitoring and unavailable tracking features.
@@ -129,3 +129,4 @@ anthropic/claude-haiku-4-5 (subagent for review follow-ups)
   - **CRITICAL-1** (Error handling in _handle_state_changed): ✓ Added try/except wrapper with error logging
   - **HIGH-1** (Tab validation in _handleSubscriptionEvent): ✓ Added tab validation check
   - Commit: 8b94a19
+- 2026-02-20: Story Acceptance — ACCEPTED (Final verdict: all reviewers passed; 0 blocking items)
