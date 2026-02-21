@@ -1,5 +1,7 @@
 # 4.3 Infinite Scroll Feature
 
+Status: done
+
 ## Description
 Implement infinite scroll functionality for the battery history view to allow users to seamlessly load more data as they scroll down without pagination.
 
