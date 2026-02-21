@@ -9,7 +9,7 @@ epics:
   - id: 1-2
     slug: event-system
     title: Event Subscription System
-    status: ready-for-dev
+    status: review
 - id: 2
   title: Battery Monitoring
   stories:
