@@ -6,6 +6,7 @@ from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.components import panel_custom
 
 from .const import (
     CONF_BATTERY_THRESHOLD,
@@ -79,6 +80,22 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     # Register WebSocket API commands
     async_register_commands(hass)
+
+    # Register custom panel
+    await hass.async_add_executor_job(
+        hass.http.register_static_path,
+        "/local/heimdall_battery_sentinel",
+        hass.config.path("custom_components/heimdall_battery_sentinel/www"),
+        True,
+    )
+    hass.components.panel_custom.async_register_panel(
+        component_name="iframe",
+        sidebar_title="Battery Sentinel",
+        sidebar_icon="mdi:battery",
+        frontend_url_path="heimdall-battery-sentinel",
+        html_url="/local/heimdall_battery_sentinel/panel-heimdall.html",
+        require_admin=False,
+    )
 
     # Perform initial dataset population from current HA states
     await _populate_initial_datasets(hass, store, evaluator, resolver)

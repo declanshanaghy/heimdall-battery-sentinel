@@ -8,5 +8,9 @@
   "codeowners": ["@declanshanaghy"],
   "requirements": [],
   "config_flow": true,
-  "integration_type": "service"
+  "integration_type": "service",
+  "frontend": {
+    "panel_url": "heimdall-battery-sentinel",
+    "panel_iframe": true
+  }
 }
