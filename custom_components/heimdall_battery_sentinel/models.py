@@ -6,10 +6,18 @@ from datetime import datetime, timezone
 from typing import Optional
 
 from .const import (
+    SEVERITY_CRITICAL,
+    SEVERITY_CRITICAL_ICON,
+    SEVERITY_CRITICAL_RATIO_THRESHOLD,
+    SEVERITY_NOTICE,
+    SEVERITY_NOTICE_ICON,
     SEVERITY_ORANGE,
     SEVERITY_ORANGE_THRESHOLD,
     SEVERITY_RED,
     SEVERITY_RED_THRESHOLD,
+    SEVERITY_WARNING,
+    SEVERITY_WARNING_ICON,
+    SEVERITY_WARNING_RATIO_THRESHOLD,
     SEVERITY_YELLOW,
     SORT_DIR_ASC,
     SORT_FIELD_BATTERY_LEVEL,
@@ -25,7 +33,8 @@ class LowBatteryRow:
     friendly_name: str
     battery_display: str  # e.g. "15%" or "low"
     battery_numeric: Optional[float] = None  # None for textual
-    severity: Optional[str] = None  # "red" | "orange" | "yellow" | None
+    severity: Optional[str] = None  # "critical" | "warning" | "notice" | None
+    severity_icon: Optional[str] = None  # MDI icon for severity (e.g. "mdi:battery-alert")
     manufacturer: Optional[str] = None
     model: Optional[str] = None
     area: Optional[str] = None
@@ -40,6 +49,7 @@ class LowBatteryRow:
             "battery_display": self.battery_display,
             "battery_numeric": self.battery_numeric,
             "severity": self.severity,
+            "severity_icon": self.severity_icon,
             "manufacturer": self.manufacturer,
             "model": self.model,
             "area": self.area,
@@ -71,7 +81,7 @@ class UnavailableRow:
 
 
 def compute_severity(battery_numeric: float) -> str:
-    """Compute severity for a numeric battery level.
+    """Compute severity for a numeric battery level (deprecated - for legacy use).
 
     Args:
         battery_numeric: Battery percentage (0-100).
@@ -84,6 +94,37 @@ def compute_severity(battery_numeric: float) -> str:
     if battery_numeric <= SEVERITY_ORANGE_THRESHOLD:
         return SEVERITY_ORANGE
     return SEVERITY_YELLOW
+
+
+def compute_severity_ratio(battery_numeric: float, threshold: int) -> tuple[str, str]:
+    """Compute severity for a numeric battery based on ratio (AC2: Story 2-3).
+
+    Severity is based on ratio = (battery_level / threshold) * 100:
+    - Critical: ratio 0-33 (inclusive) → red color + mdi:battery-alert icon
+    - Warning: ratio 34-66 → orange color + mdi:battery-low icon
+    - Notice: ratio 67-100 → yellow color + mdi:battery-medium icon
+
+    Args:
+        battery_numeric: Battery percentage (0-100).
+        threshold: Battery percentage threshold (5-100).
+
+    Returns:
+        Tuple of (severity_name, icon_name):
+        - ("critical", "mdi:battery-alert")
+        - ("warning", "mdi:battery-low")
+        - ("notice", "mdi:battery-medium")
+    """
+    if threshold <= 0:
+        # Avoid division by zero
+        return SEVERITY_CRITICAL, SEVERITY_CRITICAL_ICON
+
+    ratio = (battery_numeric / threshold) * 100
+
+    if ratio <= SEVERITY_CRITICAL_RATIO_THRESHOLD:
+        return SEVERITY_CRITICAL, SEVERITY_CRITICAL_ICON
+    if ratio <= SEVERITY_WARNING_RATIO_THRESHOLD:
+        return SEVERITY_WARNING, SEVERITY_WARNING_ICON
+    return SEVERITY_NOTICE, SEVERITY_NOTICE_ICON
 
 
 def sort_low_battery_rows(

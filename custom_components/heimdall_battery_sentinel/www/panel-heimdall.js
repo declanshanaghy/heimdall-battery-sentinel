@@ -341,7 +341,15 @@
             outline-offset: 2px;
           }
           
-          /* Severity Colors — Updated to Match Spec */
+          /* Severity Colors — Story 2-3: Ratio-Based Severity */
+          /* Critical (ratio 0-33): red color */
+          .severity-critical { color: #F44336; font-weight: 500; }
+          /* Warning (ratio 34-66): orange color */
+          .severity-warning { color: #FF9800; font-weight: 500; }
+          /* Notice (ratio 67-100): yellow color */
+          .severity-notice { color: #FFEB3B; font-weight: 500; }
+          
+          /* Legacy severity colors for backward compatibility */
           .severity-red { color: #F44336; font-weight: 500; }
           .severity-orange { color: #FF9800; font-weight: 500; }
           .severity-yellow { color: #FFEB3B; font-weight: 500; }
@@ -452,7 +460,8 @@
             }
             if (col.key === "battery_level") {
               const sevClass = row.severity ? `severity-${row.severity}` : "";
-              return `<td class="${sevClass} ${className}">${this._esc(row.battery_display || "")}</td>`;
+              const icon = row.severity_icon ? `<ha-icon icon="${this._esc(row.severity_icon)}"></ha-icon> ` : "";
+              return `<td class="${sevClass} ${className}">${icon}${this._esc(row.battery_display || "")}</td>`;
             }
             if (col.key === "updated_at" && row.updated_at) {
               return `<td class="${className}">${new Date(row.updated_at).toLocaleString()}</td>`;

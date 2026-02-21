@@ -8,9 +8,12 @@ from custom_components.heimdall_battery_sentinel.evaluator import (
     evaluate_unavailable_state,
 )
 from custom_components.heimdall_battery_sentinel.const import (
-    SEVERITY_RED,
-    SEVERITY_ORANGE,
-    SEVERITY_YELLOW,
+    SEVERITY_CRITICAL,
+    SEVERITY_CRITICAL_ICON,
+    SEVERITY_NOTICE,
+    SEVERITY_NOTICE_ICON,
+    SEVERITY_WARNING,
+    SEVERITY_WARNING_ICON,
     STATE_UNAVAILABLE,
 )
 
@@ -86,30 +89,41 @@ class TestEvaluateBatteryState:
 
     # --- Severity ---
 
-    def test_severity_red(self):
-        state = _battery_state("sensor.b1", "5", unit="%")
+    def test_severity_critical_ratio_based(self):
+        """Test ratio-based critical severity (ratio 0-33, inclusive)."""
+        # battery=3, threshold=15: ratio = (3/15)*100 = 20 <= 33 → critical
+        state = _battery_state("sensor.b1", "3", unit="%")
         row = evaluate_battery_state(state, threshold=15)
-        assert row.severity == SEVERITY_RED
+        assert row.severity == SEVERITY_CRITICAL
+        assert row.severity_icon == SEVERITY_CRITICAL_ICON
 
-    def test_severity_orange(self):
+    def test_severity_warning_ratio_based(self):
+        """Test ratio-based warning severity (ratio 34-66)."""
+        # battery=8, threshold=15: ratio = (8/15)*100 = 53.33 → warning
         state = _battery_state("sensor.b1", "8", unit="%")
         row = evaluate_battery_state(state, threshold=15)
-        assert row.severity == SEVERITY_ORANGE
+        assert row.severity == SEVERITY_WARNING
+        assert row.severity_icon == SEVERITY_WARNING_ICON
 
-    def test_severity_yellow(self):
+    def test_severity_notice_ratio_based(self):
+        """Test ratio-based notice severity (ratio 67-100)."""
+        # battery=12, threshold=15: ratio = (12/15)*100 = 80 >= 67 → notice
         state = _battery_state("sensor.b1", "12", unit="%")
         row = evaluate_battery_state(state, threshold=15)
-        assert row.severity == SEVERITY_YELLOW
+        assert row.severity == SEVERITY_NOTICE
+        assert row.severity_icon == SEVERITY_NOTICE_ICON
 
     # --- Textual battery ---
 
     def test_textual_low_included(self):
+        """AC3: Textual 'low' batteries have fixed Critical severity."""
         state = _battery_state("sensor.b2", "low", unit=None)
         row = evaluate_battery_state(state, threshold=15)
         assert row is not None
         assert row.battery_display == "low"
         assert row.battery_numeric is None
-        assert row.severity is None
+        assert row.severity == SEVERITY_CRITICAL
+        assert row.severity_icon == SEVERITY_CRITICAL_ICON
 
     def test_textual_medium_excluded(self):
         state = _battery_state("sensor.b2", "medium", unit=None)
@@ -408,27 +422,29 @@ class TestStory22TextualBatteryAC:
         assert row is not None
         assert row.battery_display == "low"
 
-    # AC4: Apply proper color coding per severity rules
-    def test_ac4_textual_no_severity_coloring(self):
-        """AC4: Textual 'low' has no severity color (severity=None)."""
+    # AC4: Apply proper color coding per severity rules (updated for story 2-3)
+    def test_ac4_textual_has_critical_severity(self):
+        """AC3/Story 2-3: Textual 'low' has fixed Critical severity."""
         state = _battery_state("sensor.t3", "low", unit=None)
         row = evaluate_battery_state(state, threshold=15)
         assert row is not None
-        assert row.severity is None  # Textual has no numeric severity
+        assert row.severity == SEVERITY_CRITICAL  # Textual has fixed critical severity
+        assert row.severity_icon == SEVERITY_CRITICAL_ICON
 
     def test_ac4_numeric_has_severity_coloring(self):
-        """AC4: Numeric batteries have severity coloring, textual do not."""
+        """AC2/Story 2-3: Numeric batteries have ratio-based severity coloring."""
         evaluator = BatteryEvaluator(threshold=15)
         
         numeric_state = _battery_state("sensor.num", "10", unit="%")
         numeric_row = evaluator.evaluate_low_battery(numeric_state)
         assert numeric_row is not None
-        assert numeric_row.severity in {SEVERITY_RED, SEVERITY_ORANGE, SEVERITY_YELLOW}
+        assert numeric_row.severity in {SEVERITY_CRITICAL, SEVERITY_WARNING, SEVERITY_NOTICE}
+        assert numeric_row.severity_icon is not None  # Numeric has severity icon
         
         textual_state = _battery_state("sensor.text", "low", unit=None)
         textual_row = evaluator.evaluate_low_battery(textual_state)
         assert textual_row is not None
-        assert textual_row.severity is None
+        assert textual_row.severity == SEVERITY_CRITICAL  # Textual has critical severity
 
     # AC5: Maintain server-side sorting functionality
     def test_ac5_sorting_textual_with_numeric(self):
@@ -451,3 +467,185 @@ class TestStory22TextualBatteryAC:
         # Numeric sorts first, textual last
         assert sorted_rows[0].battery_numeric == 10.0
         assert sorted_rows[1].battery_numeric is None
+
+
+# ── Story 2-3: Severity Calculation (Ratio-Based) ──────────────────────────────────
+
+class TestStory23SeverityCalculation:
+    """Test ratio-based severity calculation per AC1, AC2, AC3, AC5 (Story 2-3)."""
+
+    # AC1: Severity is calculated based on ratio = (battery_level / threshold) * 100
+
+    def test_ac1_ratio_calculation_critical_boundary(self):
+        """AC1: Ratio-based calculation at critical/warning boundary (ratio=33)."""
+        # battery=4.95, threshold=15: ratio = (4.95/15)*100 = 33% → critical (inclusive)
+        state = _battery_state("sensor.b1", "4.95", unit="%")
+        row = evaluate_battery_state(state, threshold=15)
+        assert row is not None
+        assert row.severity == SEVERITY_CRITICAL
+
+    def test_ac1_ratio_calculation_warning_boundary(self):
+        """AC1: Ratio-based calculation at warning/notice boundary (ratio=66)."""
+        # battery=9.9, threshold=15: ratio = (9.9/15)*100 = 66% → warning (inclusive)
+        state = _battery_state("sensor.b2", "9.9", unit="%")
+        row = evaluate_battery_state(state, threshold=15)
+        assert row is not None
+        assert row.severity == SEVERITY_WARNING
+
+    def test_ac1_ratio_calculation_critical_to_warning(self):
+        """AC1: Ratio transitions from critical to warning at ratio > 33."""
+        # battery=5.1, threshold=15: ratio = (5.1/15)*100 = 34% → warning
+        state = _battery_state("sensor.b3", "5.1", unit="%")
+        row = evaluate_battery_state(state, threshold=15)
+        assert row is not None
+        assert row.severity == SEVERITY_WARNING
+
+    def test_ac1_ratio_calculation_warning_to_notice(self):
+        """AC1: Ratio transitions from warning to notice at ratio > 66."""
+        # battery=10.05, threshold=15: ratio = (10.05/15)*100 = 67% → notice
+        state = _battery_state("sensor.b4", "10.05", unit="%")
+        row = evaluate_battery_state(state, threshold=15)
+        assert row is not None
+        assert row.severity == SEVERITY_NOTICE
+
+    # AC2: Severity levels with correct colors and icons
+
+    def test_ac2_critical_severity_icon(self):
+        """AC2: Critical severity has mdi:battery-alert icon."""
+        state = _battery_state("sensor.c1", "3", unit="%")  # ratio=20 → critical
+        row = evaluate_battery_state(state, threshold=15)
+        assert row.severity == SEVERITY_CRITICAL
+        assert row.severity_icon == SEVERITY_CRITICAL_ICON
+        assert row.severity_icon == "mdi:battery-alert"
+
+    def test_ac2_warning_severity_icon(self):
+        """AC2: Warning severity has mdi:battery-low icon."""
+        state = _battery_state("sensor.w1", "8", unit="%")  # ratio=53.3 → warning
+        row = evaluate_battery_state(state, threshold=15)
+        assert row.severity == SEVERITY_WARNING
+        assert row.severity_icon == SEVERITY_WARNING_ICON
+        assert row.severity_icon == "mdi:battery-low"
+
+    def test_ac2_notice_severity_icon(self):
+        """AC2: Notice severity has mdi:battery-medium icon."""
+        state = _battery_state("sensor.n1", "12", unit="%")  # ratio=80 → notice
+        row = evaluate_battery_state(state, threshold=15)
+        assert row.severity == SEVERITY_NOTICE
+        assert row.severity_icon == SEVERITY_NOTICE_ICON
+        assert row.severity_icon == "mdi:battery-medium"
+
+    # AC3: Textual batteries with fixed Critical severity
+
+    def test_ac3_textual_low_fixed_critical_severity(self):
+        """AC3: Textual 'low' batteries have fixed Critical severity."""
+        state = _battery_state("sensor.text_low", "low", unit=None)
+        row = evaluate_battery_state(state, threshold=15)
+        assert row is not None
+        assert row.battery_numeric is None
+        assert row.severity == SEVERITY_CRITICAL
+        assert row.severity_icon == SEVERITY_CRITICAL_ICON
+
+    def test_ac3_textual_medium_and_high_excluded(self):
+        """AC3: Only textual 'low' is included, not 'medium' or 'high'."""
+        medium_state = _battery_state("sensor.text_med", "medium", unit=None)
+        high_state = _battery_state("sensor.text_high", "high", unit=None)
+        
+        med_row = evaluate_battery_state(medium_state, threshold=15)
+        high_row = evaluate_battery_state(high_state, threshold=15)
+        
+        assert med_row is None
+        assert high_row is None
+
+    # AC5: Severity uses current configurable threshold
+
+    def test_ac5_threshold_change_affects_severity(self):
+        """AC5: Different thresholds produce different severity for same battery level."""
+        state = _battery_state("sensor.flex", "6", unit="%")
+        
+        # Threshold=15: ratio = (6/15)*100 = 40 → warning
+        row1 = evaluate_battery_state(state, threshold=15)
+        assert row1.severity == SEVERITY_WARNING
+        
+        # Threshold=20: ratio = (6/20)*100 = 30 → critical
+        row2 = evaluate_battery_state(state, threshold=20)
+        assert row2.severity == SEVERITY_CRITICAL
+
+    def test_ac5_evaluator_threshold_property(self):
+        """AC5: BatteryEvaluator threshold property updates severity calculation."""
+        state = _battery_state("sensor.dyn", "10", unit="%")
+        
+        evaluator = BatteryEvaluator(threshold=15)
+        # ratio = (10/15)*100 = 66.67 → notice (just barely)
+        row1 = evaluator.evaluate_low_battery(state)
+        assert row1.severity == SEVERITY_NOTICE
+        
+        # Change threshold to 20
+        evaluator.threshold = 20
+        # ratio = (10/20)*100 = 50 → warning
+        row2 = evaluator.evaluate_low_battery(state)
+        assert row2.severity == SEVERITY_WARNING
+
+    # Comprehensive ratio coverage tests
+
+    def test_ratio_min_value(self):
+        """Test ratio at 0% (battery=0, threshold=15)."""
+        state = _battery_state("sensor.zero", "0", unit="%")
+        row = evaluate_battery_state(state, threshold=15)
+        assert row is not None
+        assert row.severity == SEVERITY_CRITICAL
+
+    def test_ratio_max_at_critical_threshold(self):
+        """Test ratio at exactly 33% (battery=4.95, threshold=15)."""
+        state = _battery_state("sensor.crit33", "4.95", unit="%")
+        row = evaluate_battery_state(state, threshold=15)
+        assert row is not None
+        assert row.severity == SEVERITY_CRITICAL
+
+    def test_ratio_min_warning(self):
+        """Test ratio at 34% (battery=5.1, threshold=15)."""
+        state = _battery_state("sensor.warn34", "5.1", unit="%")
+        row = evaluate_battery_state(state, threshold=15)
+        assert row is not None
+        assert row.severity == SEVERITY_WARNING
+
+    def test_ratio_max_warning(self):
+        """Test ratio at 66% (battery=9.9, threshold=15)."""
+        state = _battery_state("sensor.warn66", "9.9", unit="%")
+        row = evaluate_battery_state(state, threshold=15)
+        assert row is not None
+        assert row.severity == SEVERITY_WARNING
+
+    def test_ratio_min_notice(self):
+        """Test ratio at 67% (battery=10.05, threshold=15)."""
+        state = _battery_state("sensor.notice67", "10.05", unit="%")
+        row = evaluate_battery_state(state, threshold=15)
+        assert row is not None
+        assert row.severity == SEVERITY_NOTICE
+
+    def test_ratio_max_notice(self):
+        """Test ratio at 100% (battery=15, threshold=15)."""
+        state = _battery_state("sensor.notice100", "15", unit="%")
+        row = evaluate_battery_state(state, threshold=15)
+        assert row is not None
+        assert row.severity == SEVERITY_NOTICE
+
+    def test_different_threshold_critical_range(self):
+        """Test critical range (0-33%) with threshold=20."""
+        # battery=6, threshold=20: ratio=30 → critical
+        state = _battery_state("sensor.th20_crit", "6", unit="%")
+        row = evaluate_battery_state(state, threshold=20)
+        assert row.severity == SEVERITY_CRITICAL
+
+    def test_different_threshold_warning_range(self):
+        """Test warning range (34-66%) with threshold=20."""
+        # battery=10, threshold=20: ratio=50 → warning
+        state = _battery_state("sensor.th20_warn", "10", unit="%")
+        row = evaluate_battery_state(state, threshold=20)
+        assert row.severity == SEVERITY_WARNING
+
+    def test_different_threshold_notice_range(self):
+        """Test notice range (67-100%) with threshold=20."""
+        # battery=15, threshold=20: ratio=75 → notice
+        state = _battery_state("sensor.th20_notice", "15", unit="%")
+        row = evaluate_battery_state(state, threshold=20)
+        assert row.severity == SEVERITY_NOTICE

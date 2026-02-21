@@ -6,12 +6,14 @@ from typing import Optional
 
 from .const import (
     DEVICE_CLASS_BATTERY,
+    SEVERITY_CRITICAL,
+    SEVERITY_CRITICAL_ICON,
     STATE_LOW,
     STATE_UNAVAILABLE,
     TEXTUAL_BATTERY_STATES,
     UNIT_PERCENT,
 )
-from .models import LowBatteryRow, UnavailableRow, compute_severity
+from .models import LowBatteryRow, UnavailableRow, compute_severity_ratio
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -82,7 +84,7 @@ def evaluate_battery_state(
         numeric_value = float(state_value)
         if unit == UNIT_PERCENT:
             if numeric_value <= threshold:
-                severity = compute_severity(numeric_value)
+                severity, severity_icon = compute_severity_ratio(numeric_value, threshold)
                 display = f"{round(numeric_value)}%"
                 return LowBatteryRow(
                     entity_id=state.entity_id,
@@ -90,6 +92,7 @@ def evaluate_battery_state(
                     battery_display=display,
                     battery_numeric=numeric_value,
                     severity=severity,
+                    severity_icon=severity_icon,
                     manufacturer=manufacturer,
                     model=model,
                     area=area,
@@ -120,7 +123,8 @@ def evaluate_battery_state(
                 friendly_name=friendly_name,
                 battery_display=STATE_LOW,
                 battery_numeric=None,
-                severity=None,
+                severity=SEVERITY_CRITICAL,
+                severity_icon=SEVERITY_CRITICAL_ICON,
                 manufacturer=manufacturer,
                 model=model,
                 area=area,

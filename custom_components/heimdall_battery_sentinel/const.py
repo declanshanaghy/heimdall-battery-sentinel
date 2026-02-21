@@ -35,11 +35,24 @@ UNIT_PERCENT = "%"
 SEVERITY_RED = "red"
 SEVERITY_ORANGE = "orange"
 SEVERITY_YELLOW = "yellow"
+SEVERITY_CRITICAL = "critical"
+SEVERITY_WARNING = "warning"
+SEVERITY_NOTICE = "notice"
 
-# Severity thresholds (inclusive upper bound)
+# Severity thresholds (old absolute-based, kept for reference)
 SEVERITY_RED_THRESHOLD = 5     # 0–5%
 SEVERITY_ORANGE_THRESHOLD = 10  # 6–10%
 # 11–threshold% → yellow
+
+# Ratio-based severity thresholds (AC2: Story 2-3)
+SEVERITY_CRITICAL_RATIO_THRESHOLD = 33  # ratio <= 33 → critical
+SEVERITY_WARNING_RATIO_THRESHOLD = 66   # ratio <= 66 → warning
+# ratio > 66 → notice
+
+# Severity icons (Material Design Icons)
+SEVERITY_CRITICAL_ICON = "mdi:battery-alert"
+SEVERITY_WARNING_ICON = "mdi:battery-low"
+SEVERITY_NOTICE_ICON = "mdi:battery-medium"
 
 # WebSocket commands
 WS_COMMAND_SUMMARY = "heimdall/summary"
