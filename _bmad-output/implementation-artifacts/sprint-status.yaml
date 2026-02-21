@@ -58,7 +58,7 @@ epics:
   - id: 4-2
     slug: sortable-tables
     title: Sortable Tables
-    status: ready-for-dev
+    status: done
   - id: 4-3
     slug: infinite-scroll
     title: Infinite Scroll
