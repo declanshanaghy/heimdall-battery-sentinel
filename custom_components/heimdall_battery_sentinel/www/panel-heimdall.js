@@ -47,26 +47,47 @@
 
   /**
    * HeimdallPanel — Custom HTML Element registered as <heimdall-panel>.
+   *
+   * Manages tabbed interface, WebSocket communication, and real-time data display.
    */
   class HeimdallPanel extends HTMLElement {
+    /**
+     * Initialize HeimdallPanel with empty state.
+     */
     constructor() {
       super();
+      /** @type {Object|null} Home Assistant instance. */
       this._hass = null;
+      /** @type {Object|null} Home Assistant WebSocket connection. */
       this._ws = null;
+      /** @type {string|null} Active subscription ID. */
       this._subscriptionId = null;
+      /** @type {ShadowRoot} Shadow DOM root for encapsulation. */
       this._shadow = this.attachShadow({ mode: "open" });
 
       // UI state
+      /** @type {string} Currently active tab ("low_battery" or "unavailable"). */
       this._activeTab = TAB_LOW_BATTERY;
+      /** @type {Object} Summary data: low_battery_count, unavailable_count, threshold. */
       this._summary = { low_battery_count: 0, unavailable_count: 0, threshold: 15 };
+      /** @type {Object<string, Array>} Cached rows by tab. */
       this._rows = { [TAB_LOW_BATTERY]: [], [TAB_UNAVAILABLE]: [] };
+      /** @type {Object<string, Object>} Sort state by tab. */
       this._sort = { ...DEFAULT_SORT };
+      /** @type {boolean} True while loading a page. */
       this._loading = false;
+      /** @type {Object<string, number>} Current page offset by tab. */
       this._offset = { [TAB_LOW_BATTERY]: 0, [TAB_UNAVAILABLE]: 0 };
+      /** @type {Object<string, string|null>} Dataset version by tab for invalidation detection. */
       this._datasetVersion = { [TAB_LOW_BATTERY]: null, [TAB_UNAVAILABLE]: null };
+      /** @type {Object<string, boolean>} True when all rows for tab are loaded. */
       this._end = { [TAB_LOW_BATTERY]: false, [TAB_UNAVAILABLE]: false };
     }
 
+    /**
+     * Set Home Assistant instance (called by HA when panel loads).
+     * @param {Object} hass - Home Assistant instance.
+     */
     set hass(hass) {
       this._hass = hass;
       if (!this._ws) {
@@ -81,20 +102,42 @@
     // ── WebSocket Lifecycle ───────────────────────────────────────────────────
 
     _initWebSocket() {
-      if (!this._hass || !this._hass.connection) return;
+      if (!this._hass || !this._hass.connection) {
+        console.warn("[HeimdallPanel] Home Assistant connection not available");
+        return;
+      }
       this._ws = this._hass.connection;
       this._loadSummary();
       this._loadPage(this._activeTab, true);
       this._subscribe();
     }
 
+    /**
+     * Wraps a WebSocket message promise with a 10s timeout.
+     * @param {Promise} promise - The promise to wrap.
+     * @param {string} operation - Description of the operation for error messaging.
+     * @returns {Promise} Promise that rejects after 10s if not resolved.
+     */
+    _withTimeout(promise, operation) {
+      return Promise.race([
+        promise,
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error(`Timeout: ${operation} exceeded 10s`)), 10000)
+        ),
+      ]);
+    }
+
     async _loadSummary() {
       try {
-        const result = await this._ws.sendMessagePromise({ type: WS_SUMMARY });
+        const result = await this._withTimeout(
+          this._ws.sendMessagePromise({ type: WS_SUMMARY }),
+          "Load summary"
+        );
         this._summary = result;
         this._updateTabCounts();
       } catch (err) {
         console.error("[HeimdallPanel] Failed to load summary:", err);
+        this._showError("Failed to load battery status");
       }
     }
 
@@ -112,14 +155,17 @@
 
       const sort = this._sort[tab];
       try {
-        const result = await this._ws.sendMessagePromise({
-          type: WS_LIST,
-          tab,
-          sort_by: sort.by,
-          sort_dir: sort.dir,
-          offset: this._offset[tab],
-          dataset_version: this._datasetVersion[tab],
-        });
+        const result = await this._withTimeout(
+          this._ws.sendMessagePromise({
+            type: WS_LIST,
+            tab,
+            sort_by: sort.by,
+            sort_dir: sort.dir,
+            offset: this._offset[tab],
+            dataset_version: this._datasetVersion[tab],
+          }),
+          `Load ${tab} page`
+        );
 
         if (result.invalidated && this._offset[tab] !== 0) {
           // Dataset changed — restart from page 0
@@ -134,6 +180,7 @@
         this._renderTable();
       } catch (err) {
         console.error("[HeimdallPanel] Failed to load page:", err);
+        this._showError(`Failed to load ${tab} data`);
       } finally {
         this._loading = false;
       }
@@ -141,12 +188,40 @@
 
     async _subscribe() {
       try {
-        await this._ws.subscribeMessage(
-          (event) => this._handleSubscriptionEvent(event),
-          { type: WS_SUBSCRIBE }
+        await this._withTimeout(
+          this._ws.subscribeMessage(
+            (event) => this._handleSubscriptionEvent(event),
+            { type: WS_SUBSCRIBE }
+          ),
+          "Subscribe to updates"
         );
       } catch (err) {
         console.error("[HeimdallPanel] Failed to subscribe:", err);
+        this._showError("Failed to subscribe to live updates");
+      }
+    }
+
+    /**
+     * Display an error message to the user in the panel.
+     * @param {string} message - Error message to display.
+     */
+    _showError(message) {
+      const errorEl = document.createElement("div");
+      errorEl.style.cssText = `
+        background-color: #ffebee;
+        border-left: 4px solid #f44336;
+        color: #b71c1c;
+        padding: 12px;
+        margin: 12px 0;
+        border-radius: 2px;
+        font-size: 14px;
+      `;
+      errorEl.textContent = message;
+      
+      const container = this._shadow.querySelector("main");
+      if (container) {
+        container.insertBefore(errorEl, container.firstChild);
+        setTimeout(() => errorEl.remove(), 5000); // Auto-remove after 5s
       }
     }
 

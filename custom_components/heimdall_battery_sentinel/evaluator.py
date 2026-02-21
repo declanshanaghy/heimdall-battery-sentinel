@@ -105,7 +105,11 @@ def evaluate_battery_state(
         )
         return None
     except (ValueError, TypeError):
-        pass
+        _LOGGER.debug(
+            "Entity %s: failed to parse battery state %r as numeric",
+            state.entity_id,
+            state_value,
+        )
 
     # --- Try textual battery ---
     normalized = state_value.lower()

@@ -17,6 +17,18 @@ from custom_components.heimdall_battery_sentinel.const import (
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 def _lb(entity_id, friendly_name="Entity", battery_numeric=10.0, battery_display="10%", area=None):
+    """Create a test LowBatteryRow.
+    
+    Args:
+        entity_id: Entity ID (required).
+        friendly_name: Display name (default: "Entity").
+        battery_numeric: Numeric battery level (default: 10.0%).
+        battery_display: Display string (default: "10%").
+        area: Area name or None (default: None).
+    
+    Returns:
+        LowBatteryRow instance for testing.
+    """
     return LowBatteryRow(
         entity_id=entity_id,
         friendly_name=friendly_name,
@@ -27,6 +39,15 @@ def _lb(entity_id, friendly_name="Entity", battery_numeric=10.0, battery_display
 
 
 def _uv(entity_id, friendly_name="Entity"):
+    """Create a test UnavailableRow.
+    
+    Args:
+        entity_id: Entity ID (required).
+        friendly_name: Display name (default: "Entity").
+    
+    Returns:
+        UnavailableRow instance for testing.
+    """
     return UnavailableRow(entity_id=entity_id, friendly_name=friendly_name)
 
 

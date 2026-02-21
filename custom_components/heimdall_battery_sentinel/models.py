@@ -85,33 +85,6 @@ def compute_severity(battery_numeric: float) -> str:
     return SEVERITY_YELLOW
 
 
-def sort_key_low_battery(row: LowBatteryRow, sort_by: str, sort_dir: str):
-    """Return a sort key tuple for a LowBatteryRow.
-
-    Stable tie-breaker: friendly_name (casefolded), then entity_id.
-    """
-    reverse = sort_dir != SORT_DIR_ASC
-    if sort_by == SORT_FIELD_BATTERY_LEVEL:
-        # Textual "low" sorts after numeric; use 999 as sentinel
-        primary = row.battery_numeric if row.battery_numeric is not None else 999.0
-    elif sort_by == SORT_FIELD_FRIENDLY_NAME:
-        primary = (row.friendly_name or "").casefold()
-    elif sort_by == "area":
-        primary = (row.area or "").casefold()
-    elif sort_by == "manufacturer":
-        primary = (row.manufacturer or "").casefold()
-    else:
-        primary = (row.friendly_name or "").casefold()
-
-    tie1 = (row.friendly_name or "").casefold()
-    tie2 = row.entity_id
-
-    if reverse:
-        # Return negated values for numeric, or use the key passed through reversed=True
-        return (-primary if isinstance(primary, float) else primary, tie1, tie2)
-    return (primary, tie1, tie2)
-
-
 def sort_low_battery_rows(
     rows: list[LowBatteryRow], sort_by: str, sort_dir: str
 ) -> list[LowBatteryRow]:

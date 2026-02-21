@@ -6,5 +6,7 @@
   "issue_tracker": "https://github.com/declanshanaghy/heimdall-battery-sentinel/issues",
   "dependencies": [],
   "codeowners": ["@declanshanaghy"],
-  "requirements": []
+  "requirements": [],
+  "config_flow": true,
+  "integration_type": "service"
 }
