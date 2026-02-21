@@ -252,11 +252,13 @@ class TestBatteryEvaluator:
         states = [_battery_state("sensor.low", "5", unit="%")]
 
         def meta_fn(entity_id):
-            return ("Acme", "X1", "Bedroom")
+            # metadata_fn MUST return 4-tuple: (manufacturer, model, area, device_id)
+            return ("Acme", "X1", "Bedroom", "device_acme_001")
 
         low_battery, _ = evaluator.batch_evaluate(states, metadata_fn=meta_fn)
         assert low_battery[0].manufacturer == "Acme"
         assert low_battery[0].area == "Bedroom"
+        assert low_battery[0].device_id == "device_acme_001"
 
     def test_batch_evaluate_empty_states(self):
         evaluator = BatteryEvaluator(threshold=15)

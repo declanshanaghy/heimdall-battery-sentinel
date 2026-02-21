@@ -241,8 +241,9 @@ class BatteryEvaluator:
 
         Args:
             states: Iterable of HA State objects.
-            metadata_fn: Optional callable(entity_id) -> (manufacturer, model, area) or 
-                         (manufacturer, model, area, device_id).
+            metadata_fn: Optional callable(entity_id) -> (manufacturer, model, area, device_id).
+                        Returns 4-tuple with device_id as 4th element.
+                        If metadata_fn returns None for an entity, device_id is treated as None.
 
         Returns:
             Tuple of (list[LowBatteryRow], list[UnavailableRow]).
@@ -255,13 +256,9 @@ class BatteryEvaluator:
                 meta = metadata_fn(state.entity_id)
                 if meta is None:
                     manufacturer, model, area, device_id = None, None, None, None
-                elif len(meta) == 4:
-                    # Extended format: (manufacturer, model, area, device_id)
-                    manufacturer, model, area, device_id = meta
                 else:
-                    # Legacy format: (manufacturer, model, area)
-                    manufacturer, model, area = meta if meta else (None, None, None)
-                    device_id = None
+                    # metadata_fn MUST return 4-tuple: (manufacturer, model, area, device_id)
+                    manufacturer, model, area, device_id = meta
             else:
                 manufacturer, model, area, device_id = None, None, None, None
 
@@ -309,6 +306,19 @@ class BatteryEvaluator:
         for device_id, device_rows in device_batteries.items():
             # Sort by entity_id ascending and keep the first
             sorted_rows = sorted(device_rows, key=lambda r: r.entity_id)
-            result.append(sorted_rows[0])
+            kept_row = sorted_rows[0]
+            result.append(kept_row)
+            
+            # Log filtering action for observability
+            if len(sorted_rows) > 1:
+                dropped_entity_ids = [r.entity_id for r in sorted_rows[1:]]
+                _LOGGER.debug(
+                    "AC4: Device %s has %d batteries; keeping %s (lowest entity_id), "
+                    "dropping %s",
+                    device_id,
+                    len(sorted_rows),
+                    kept_row.entity_id,
+                    dropped_entity_ids,
+                )
 
         return result

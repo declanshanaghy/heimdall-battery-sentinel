@@ -98,9 +98,80 @@ class HeimdallStore:
     def upsert_low_battery(self, row: LowBatteryRow) -> None:
         """Insert or update a low-battery row.
 
+        Per AC4: Enforces one battery per device (first by entity_id ascending).
+        If the device_id is set and there are existing batteries for that device,
+        removes any batteries with higher entity_ids.
+
         Args:
             row: The LowBatteryRow to upsert.
         """
+        # AC4: If device_id is set, enforce one-battery-per-device constraint
+        if hasattr(row, "device_id") and row.device_id is not None:
+            device_id = row.device_id
+            # Find all existing batteries for this device
+            existing_for_device = [
+                (entity_id, battery_row)
+                for entity_id, battery_row in self._low_battery.items()
+                if hasattr(battery_row, "device_id") and battery_row.device_id == device_id
+            ]
+            
+            if existing_for_device:
+                # Compare entity_ids to determine which to keep
+                # Keep the one with the lowest entity_id (as per AC4 requirement)
+                lowest_entity_id = min(row.entity_id, min(entity_id for entity_id, _ in existing_for_device))
+                
+                if lowest_entity_id != row.entity_id:
+                    # Current row has a higher entity_id; don't add it, remove if it existed
+                    if row.entity_id in self._low_battery:
+                        del self._low_battery[row.entity_id]
+                    _LOGGER.debug(
+                        "AC4: Device %s has existing battery %s (entity_id lower); "
+                        "not adding %s",
+                        device_id,
+                        lowest_entity_id,
+                        row.entity_id,
+                    )
+                    self._notify_subscribers({
+                        "type": "remove",
+                        "tab": TAB_LOW_BATTERY,
+                        "entity_id": row.entity_id,
+                        "dataset_version": self._low_battery_version,
+                    })
+                else:
+                    # Current row has the lowest entity_id; add it and remove higher ones
+                    self._low_battery[row.entity_id] = row
+                    
+                    # Remove any existing batteries for this device with higher entity_ids
+                    to_remove = [
+                        entity_id
+                        for entity_id, _ in existing_for_device
+                        if entity_id > row.entity_id
+                    ]
+                    for entity_id in to_remove:
+                        del self._low_battery[entity_id]
+                        _LOGGER.debug(
+                            "AC4: Device %s kept %s, removed lower-priority %s",
+                            device_id,
+                            row.entity_id,
+                            entity_id,
+                        )
+                        self._notify_subscribers({
+                            "type": "remove",
+                            "tab": TAB_LOW_BATTERY,
+                            "entity_id": entity_id,
+                            "dataset_version": self._low_battery_version,
+                        })
+                    
+                    _LOGGER.debug("Upserted low_battery row: %s (AC4 enforced for device %s)", row.entity_id, device_id)
+                    self._notify_subscribers({
+                        "type": "upsert",
+                        "tab": TAB_LOW_BATTERY,
+                        "row": row.as_dict(),
+                        "dataset_version": self._low_battery_version,
+                    })
+                return
+        
+        # No device_id or no AC4 constraint: regular upsert
         self._low_battery[row.entity_id] = row
         _LOGGER.debug("Upserted low_battery row: %s", row.entity_id)
         self._notify_subscribers({
