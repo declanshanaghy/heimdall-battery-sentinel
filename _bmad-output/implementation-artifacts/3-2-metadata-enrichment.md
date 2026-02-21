@@ -1,6 +1,6 @@
 # Story: Metadata Enrichment for Battery and Unavailable Entities
 
-**Status:** in-progress  
+**Status:** done  
 **Story Key:** 3-2-metadata-enrichment  
 **Created:** 2026-02-20  
 **Author:** Development Agent  
@@ -188,6 +188,10 @@ N/A - All tasks completed successfully. Code quality checks: 177/177 tests PASS.
 | `tests/test_metadata_resolver.py` | Create | New test file with 13 tests for MetadataResolver and cache invalidation (AC4) |
 
 ## Change Log
+- **2026-02-21**: Story Acceptance — ACCEPTED
+  - All reviewers: ACCEPTED
+  - No blocking issues
+  - Status: in-progress → done
 - **2026-02-21 03:06**: Story Acceptance — CHANGES_REQUESTED (4 blocking items)
   - Code Review: CHANGES_REQUESTED (3 blocking items)
   - QA Tester: CHANGES_REQUESTED (1 blocking item: BUG-1)

@@ -1,134 +1,99 @@
 # Code Review Report
 
-**Story:** 3-2-metadata-enrichment  
-**Reviewer:** anthropic/claude-haiku-4-5  
-**Date:** 2026-02-21  
+**Story:** 3-2-metadata-enrichment
+**Reviewer:** MiniMax-M2.5
+**Date:** 2026-02-21
 **Overall Verdict:** ACCEPTED
-
----
 
 ## Prior Epic Recommendations
 
 | Recommendation | Source Epic | Status |
 |---------------|-------------|--------|
-| AC4-Type Invariants: For epics 3+ with incremental events, flag AC that depend on "state consistency" (one-per-X patterns). Require both batch AND event handler test coverage from day 1. | Epic 2 | ✅ Followed — Metadata cache invalidation tested for both batch (batch_evaluate + metadata_fn) and incremental (registry_updated events) paths. TestMetadataResolverCacheInvalidation explicitly validates cache clearing on registry updates. |
-| UX Accessibility Checklist: Add WCAG 2.1 AA checks to story definition phase. Consider automated linting (lighthouse-ci, pa11y). | Epic 2 | ✅ Followed — UX Review confirmed all accessibility checks pass. Model column added with proper responsive hiding. |
-| Story Acceptance Clarity: Document what story acceptance validates that code/QA/UX reviews don't. | Epic 2 | ✅ Followed — Task checklist now accurately reflects implementation status. |
-
----
+| Error handling patterns (try/except in event handlers) | Epic 1 | ✅ Followed |
+| AC4-Type Invariants (batch AND event handler test coverage) | Epic 2 | ✅ Followed |
+| UX Accessibility Checklist (WCAG checks in story definition) | Epic 2 | ✅ Followed (implemented in this story) |
+| Story Acceptance Clarity (document what acceptance validates) | Epic 2 | ⚠️ Not applicable to code review |
 
 ## Checklist Verification
 
 - [x] Story file loaded and parsed
-- [x] Story status verified as reviewable (was: in-progress)
+- [x] Story status verified as reviewable (was: in-progress, re-run after fixes)
 - [x] Acceptance Criteria cross-checked against implementation
-- [x] File List reviewed and validated against git history
+- [x] File List reviewed and validated for completeness
 - [x] Code quality review performed on changed files
 - [x] Security review performed
-- [x] Tests verified to run and pass (177/177 PASS)
+- [x] Tests verified to exist and pass (177/177 PASS)
 
----
+## Previous Blocking Issues - Verification
 
-## Previous Blocking Items - Verification Status
+### CRIT-1: Task Checklist (FIXED ✅)
+- **Issue**: Frontend tasks marked [ ] but claimed complete
+- **Fix Applied**: Story file updated with [x] for all frontend implementation tasks:
+  - [x] Add manufacturer/model column to both tables
+  - [x] Add area column to both tables
+  - [x] Implement proper null value display ("Unknown", "Unassigned")
+- **Verification**: Checked story file - all tasks marked [x]
 
-| ID | Issue | Status |
-|----|-------|--------|
-| CRIT-1 | Frontend Task Checklist Out of Sync | ✅ FIXED - Frontend tasks now marked [x] in story file |
-| BUG-1/UX-CRIT-1 | Missing Model Column in Both Tabs | ✅ FIXED - Model column added to both tabs (panel-heimdall.js lines 37, 43). Mobile hide CSS added (line 394, 460) |
-| HIGH-1 | Metadata Resolution Silent Error Handling | ✅ FIXED - Diagnostic logging added to __init__.py _handle_state_changed() (lines 219-224) |
-| HIGH-2 | Test Verification Incomplete | ✅ FIXED - 177/177 tests PASS (verified with pytest) |
+### HIGH-1: Diagnostic Logging (FIXED ✅)
+- **Issue**: Missing diagnostic logging in _handle_state_changed()
+- **Fix Applied**: Added to __init__.py _handle_state_changed():
+  ```python
+  meta = resolver.resolve(entity_id)
+  LOGGER.debug(f"Metadata for {entity_id}: unpacked {len(meta) if meta else 0} elements (expected 4)")
+  if meta and len(meta) == 4:
+      manufacturer, model, area, device_id = meta
+  else:
+      if meta and len(meta) != 4:
+          LOGGER.warning(f"Metadata for {entity_id} has unexpected length: {len(meta) if meta else 0}, expected 4")
+  ```
+- **Verification**: Confirmed in __init__.py lines 185-192
 
----
+### HIGH-2: Test Verification (FIXED ✅)
+- **Issue**: Tests not verified to pass
+- **Fix Applied**: Ran pytest
+- **Verification**: 177/177 tests PASS
 
 ## Acceptance Criteria Validation
 
 | AC | Status | Evidence |
 |----|--------|----------|
-| AC1: Resolve and display manufacturer, model, area from device/area registries | ✅ PASS | MetadataResolver.resolve() implements registry chain (entity → device → area). Backend serialization applies values. Frontend COLUMNS includes manufacturer/model/area. |
-| AC2: If manufacturer/model unavailable, display "Unknown" | ✅ PASS | models.py as_dict() applies METADATA_UNKNOWN constant. Test cases validate None → "Unknown". |
-| AC3: If area unavailable, display "Unassigned" | ✅ PASS | models.py as_dict() applies METADATA_UNASSIGNED constant. Test cases validate None → "Unassigned". |
-| AC4: Metadata must update in real-time when device/area registries change | ✅ PASS | __init__.py subscribes to registry update events. _handle_registry_updated() calls resolver.invalidate_cache(). |
-| AC5: Implementation must follow ADR-006 metadata resolution rules | ✅ PASS | MetadataResolver follows ADR-006 rule: prefer device.area, fallback entity.area. |
-
----
-
-## File List Validation
-
-| File | Action | Status | Notes |
-|------|--------|--------|-------|
-| `custom_components/heimdall_battery_sentinel/const.py` | Modify | ✅ VERIFIED | METADATA_UNKNOWN, METADATA_UNASSIGNED constants present. |
-| `custom_components/heimdall_battery_sentinel/models.py` | Modify | ✅ VERIFIED | as_dict() applies AC2/AC3 formatting. |
-| `custom_components/heimdall_battery_sentinel/__init__.py` | Modify | ✅ VERIFIED | Registry event subscriptions added. Diagnostic logging added. |
-| `custom_components/heimdall_battery_sentinel/www/panel-heimdall.js` | Modify | ✅ VERIFIED | Model column added to both tabs. Mobile hide CSS added. |
-| `tests/test_evaluator.py` | Modify | ✅ VERIFIED | TestStory32MetadataEnrichment class with 11 tests. |
-| `tests/test_metadata_resolver.py` | Create | ✅ VERIFIED | 13 tests for MetadataResolver and cache invalidation. |
-
----
+| AC1: Resolve manufacturer, model, area from registries | PASS | models.py as_dict() includes all fields; registry.py resolve() implements lookup |
+| AC2: Display "Unknown" for missing manufacturer/model | PASS | const.py METADATA_UNKNOWN = "Unknown"; applied in as_dict() serialization |
+| AC3: Display "Unassigned" for missing area | PASS | const.py METADATA_UNASSIGNED = "Unassigned"; applied in as_dict() serialization |
+| AC4: Real-time metadata updates on registry changes | PASS | __init__.py subscribes to device/area/entity_registry_updated events; calls resolver.invalidate_cache() |
+| AC5: Follow ADR-006 metadata resolution rules | PASS | Registry.py implements ADR-006: device→manufacturer/model, area preference device.area→entity.area |
 
 ## Findings
 
-### 🔴 CRITICAL Issues
+### Previous Issues - All Resolved
 
-None.
+| ID | Finding | Status |
+|----|---------|--------|
+| CRIT-1 | Task Checklist | ✅ FIXED |
+| HIGH-1 | Diagnostic Logging | ✅ FIXED |
+| HIGH-2 | Test Verification | ✅ FIXED |
 
-### 🟠 HIGH Issues
+### New Issues Found
 
-None.
-
-### 🟡 MEDIUM Issues
-
-None (previously reported MED-1, MED-2, MED-3 are non-blocking and were not addressed in this fix cycle).
-
-### 🟢 LOW Issues
-
-None (previously reported LOW-1, LOW-2 are non-blocking and were not addressed in this fix cycle).
-
----
-
-## Code Quality Deep Dive
-
-### Security Review ✅
-- No injection vectors detected
-- No hardcoded secrets
-- WebSocket commands use voluptuous schema validation
-
-### Error Handling ✅
-- State change handler wrapped in try/except
-- Registry access has graceful fallback
-- Diagnostic logging added for metadata unpacking
-
-### Performance ✅
-- Metadata caching implemented with invalidation
-- No N+1 queries detected (registry lookups are per-entity)
-
----
+None. All acceptance criteria are met, all marked tasks are completed, and all tests pass.
 
 ## Verification Commands
 
 ```bash
-python -m pytest tests/ -v --tb=short
-# Result: 177 passed in 0.48s
+python -m pytest --tb=short  # 177/177 PASS
 ```
 
+## Summary
+
+All three blocking issues from the previous code review have been properly fixed:
+
+1. **Task Checklist**: Frontend implementation tasks now properly marked [x] complete in story file
+2. **Diagnostic Logging**: Added debug/warning logging in _handle_state_changed() for metadata resolution
+3. **Test Verification**: Confirmed 177/177 tests passing
+
+The implementation satisfies all five acceptance criteria and follows the architectural patterns established in prior epics (Epic 1 error handling, Epic 2 AC4-type invariant testing). No new blocking issues identified.
+
+**Overall Verdict: ACCEPTED**
+
 ---
-
-## Other Reviews Summary
-
-| Reviewer | Verdict | Status |
-|----------|---------|--------|
-| QA Tester | ACCEPTED | 177/177 tests pass |
-| UX Review | ACCEPTED | Model column implemented, mobile CSS correct |
-
----
-
-## Conclusion
-
-**Overall Verdict:** ACCEPTED
-
-All previous blocking issues have been resolved:
-- ✅ CRIT-1: Story task checklist updated
-- ✅ BUG-1/UX-CRIT-1: Model column added to both tabs with mobile CSS
-- ✅ HIGH-1: Diagnostic logging added
-- ✅ HIGH-2: Tests verified (177/177 PASS)
-
-All acceptance criteria validated. No new critical or high issues found. The implementation is ready for story acceptance.
+*Report generated as re-run verification after fixes applied*
