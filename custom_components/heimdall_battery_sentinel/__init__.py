@@ -81,18 +81,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Register WebSocket API commands
     async_register_commands(hass)
 
-    # Register custom panel
-    # Register static path for the panel JS
-    hass.http.async_register_static_paths(
-        [{"type": "module", "path": hass.config.path("custom_components/heimdall_battery_sentinel/www/panel-heimdall.js"), "url_path": "local/heimdall_battery_sentinel/panel-heimdall.js"}]
-    )
-    panel_custom.async_register_panel(
-        frontend_url_path="heimdall-battery-sentinel",
-        sidebar_title="Battery Sentinel",
-        sidebar_icon="mdi:battery",
-        html="/local/heimdall_battery_sentinel/panel-heimdall.html",
-        require_admin=False,
-    )
+    # Note: Panel registration disabled for now - can be added via configuration.yaml
+    # panel_custom.async_register_panel(...)
 
     # Perform initial dataset population from current HA states
     await _populate_initial_datasets(hass, store, evaluator, resolver)
