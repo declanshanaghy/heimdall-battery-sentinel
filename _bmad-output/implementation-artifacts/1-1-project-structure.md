@@ -4,7 +4,7 @@
 - **Id:** 1-1
 - **Size:** 1 day
 - **Epic:** Core Integration Setup (Epic 1)
-- **Status:** review
+- **Status:** in-progress
 
 ## Description
 Initialize the integration structure following Home Assistant custom integration patterns. Creates the foundational project structure with all required directories, files, and configurations to support the battery monitoring and unavailable tracking features.
@@ -123,3 +123,4 @@ anthropic/claude-sonnet-4-6
 ## Change Log
 - 2026-02-20: Initial story implementation (skeleton only) — CHANGES_REQUESTED
 - 2026-02-20: Review follow-ups addressed — all CRITICAL and HIGH issues resolved; 97 tests pass
+- 2026-02-20: Story Acceptance — CHANGES_REQUESTED (2 blocking items from code review)
