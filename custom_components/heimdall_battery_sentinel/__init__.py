@@ -86,7 +86,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.http.async_register_static_paths(
         [{"type": "module", "path": hass.config.path("custom_components/heimdall_battery_sentinel/www/panel-heimdall.js"), "url_path": "local/heimdall_battery_sentinel/panel-heimdall.js"}]
     )
-    hass.components.panel_custom.async_register_panel(
+    panel_custom.async_register_panel(
         component_name="iframe",
         sidebar_title="Battery Sentinel",
         sidebar_icon="mdi:battery",
