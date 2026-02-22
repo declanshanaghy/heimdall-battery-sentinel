@@ -1,6 +1,6 @@
 # Story: Metadata Enrichment for Battery and Unavailable Entities
 
-**Status:** review  
+**Status:** done  
 **Story Key:** 3-2-metadata-enrichment  
 **Created:** 2026-02-20  
 **Author:** Development Agent  
@@ -87,6 +87,7 @@ N/A - No issues encountered
 ## Change Log
 - **2026-02-20**: Initial story created
 - **2026-02-21**: Story implementation completed - metadata enrichment verified and frontend null display fixed
+- **2026-02-21**: Story Acceptance — ACCEPTED
 
 ### File List
 
