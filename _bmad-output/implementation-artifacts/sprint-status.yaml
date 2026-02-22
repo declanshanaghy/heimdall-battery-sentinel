@@ -60,6 +60,10 @@ epics:
     slug: entity-linking
     title: Entity Linking
     status: ready-for-dev
+  - id: 4-5
+    slug: deployment
+    title: Deployment
+    status: ready-for-dev
 - id: 5
   title: Configuration
   stories:
