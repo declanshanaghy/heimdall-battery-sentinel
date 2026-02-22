@@ -1,6 +1,6 @@
 # 4.2 Sortable Tables
 
-Status: review
+Status: in-progress
 <!-- NOTE: Status values MUST match sprint-status.yaml exactly: backlog | ready-for-dev | in-progress | review | done -->
 
 ## Story
@@ -104,3 +104,4 @@ N/A - No issues encountered
 ## Change Log
 - 2026-02-20: Story created from Epic 4
 - 2026-02-21: Story implementation completed - Added last_checked column and sorting support
+- 2026-02-22: Story Acceptance — CHANGES_REQUESTED (1 blocking item)
