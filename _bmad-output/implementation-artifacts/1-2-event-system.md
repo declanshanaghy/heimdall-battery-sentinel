@@ -82,7 +82,8 @@ N/A - No issues encountered
 | `tests/test_event_system.py` | Create | Added 10 unit tests for event subscription functionality |
 
 ## Status
-review
+in-progress
 
 ## Change Log
 - 2026-02-21: Event system implementation completed - Added HA event listeners, store updates, and WebSocket push notifications
+- 2026-02-21: Story Acceptance — CHANGES_REQUESTED (1 blocking items)
