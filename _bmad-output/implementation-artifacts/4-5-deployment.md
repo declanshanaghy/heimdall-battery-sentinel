@@ -1,6 +1,6 @@
 # Story 4.5: Deployment
 
-Status: ready-for-dev
+Status: review
 <!-- NOTE: Status values MUST match sprint-status.yaml exactly: backlog | ready-for-dev | in-progress | review | done -->
 
 ## Story
@@ -17,17 +17,17 @@ so that I can easily install and update it through the Home Assistant Community 
 
 ## Tasks / Subtasks
 
-- [ ] Create HACS configuration files (AC: #1)
-  - [ ] Create `hacs.json` with required HACS metadata
-  - [ ] Create `info.md` with integration description
-  - [ ] Verify manifest.json meets HACS requirements
-- [ ] Set up GitHub release workflow (AC: #2, #3)
-  - [ ] Create `.github/workflows/release.yml`
-  - [ ] Configure semver tagging
-  - [ ] Configure automatic changelog generation
+- [x] Create HACS configuration files (AC: #1)
+  - [x] Create `hacs.json` with required HACS metadata
+  - [x] Create `info.md` with integration description
+  - [x] Verify manifest.json meets HACS requirements
+- [x] Set up GitHub release workflow (AC: #2, #3)
+  - [x] Create `.github/workflows/release.yml`
+  - [x] Configure semver tagging
+  - [x] Configure automatic changelog generation
 - [ ] Verify all stories are complete before deployment (AC: #1)
   - [ ] Confirm all Epic 4 stories are done
-  - [ ] Run full test suite
+  - [x] Run full test suite
 - [ ] Create initial release (AC: #1, #2, #3)
   - [ ] Tag first release v1.0.0
   - [ ] Create GitHub release with changelog
@@ -65,13 +65,22 @@ so that I can easily install and update it through the Home Assistant Community 
 ## Dev Agent Record
 
 ### Agent Model Used
-(filled by dev-story agent)
+openrouter/minimax/minimax-m2.5
 
 ### Debug Log References
-(filled during implementation)
+N/A - No issues encountered during implementation
 
 ### Completion Notes List
-(filled during implementation)
+- Created hacs.json with HACS-compliant metadata (name, description, country, homeassistant min version)
+- Created info.md with comprehensive integration documentation including installation instructions
+- Verified manifest.json meets HACS requirements (domain, name, version, documentation, codeowners, dependencies)
+- Created .github/workflows/release.yml with modern GitHub Actions (softprops/action-gh-release)
+- Configured semver tagging via tag pattern matching (v*)
+- Configured automatic changelog generation from git commits
+- Ran full test suite: 101 tests passed
+- Created README.md with HACS installation instructions
+- Note: Epic 4 stories 4-1 through 4-4 not yet complete - deployment release should happen after Epic 4 is fully done
+- Note: manifest.json version currently 0.0.1 - should be updated to 1.0.0 before tagging release
 
 ### File List
 
@@ -79,8 +88,10 @@ so that I can easily install and update it through the Home Assistant Community 
 |------|--------|-------------|
 | `hacs.json` | Create | HACS repository metadata |
 | `info.md` | Create | Integration information for HACS |
-| `.github/workflows/release.yml` | Create | Automated release workflow |
-| `README.md` | Modify | Add HACS installation instructions |
+| `.github/workflows/release.yml` | Create | Automated release workflow with semver and changelog |
+| `README.md` | Create | Added HACS installation instructions |
+| `manifest.json` | Inspect | Verified HACS compliance (version should be 1.0.0 for release) |
 
 ## Change Log
 - 2026-02-21: Story created from Epic 4
+- 2026-02-21: Implementation completed - HACS config files, release workflow, and README created

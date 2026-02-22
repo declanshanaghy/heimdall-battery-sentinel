@@ -149,6 +149,17 @@ Given an entity in either table,
 When clicking its name,  
 Then it should open the HA entity page in a new tab.
 
+#### 4.5: Deployment
+**Description:** Deploy integration to HACS and production
+**Size:** 2 days
+
+**Acceptance Criteria:**
+Given the integration is complete,  
+When deploying to production,  
+Then it should be published to HACS (Home Assistant Community Store),
+And include proper versioning (semver),
+And have a proper release workflow with changelog.
+
 ---
 
 ## Epic 5: Configuration

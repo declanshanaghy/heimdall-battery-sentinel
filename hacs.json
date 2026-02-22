@@ -1,0 +1,7 @@
+{
+  "name": "Heimdall Battery Sentinel",
+  "description": "A Home Assistant integration that displays low battery and unavailable entities in a dedicated sidebar page with live updates.",
+  "domains": [],
+  "homeassistant": "2024.11.0",
+  "country": "US"
+}
