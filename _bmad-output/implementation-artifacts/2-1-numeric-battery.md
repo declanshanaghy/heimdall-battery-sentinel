@@ -38,7 +38,7 @@ review
 4. [x] Add server-side sorting support to store.py  
 5. [x] Add tests for paging and sorting functionality
 6. [x] Run full test suite and ensure no regressions
-7. [ ] Update story status to review
+7. [x] Update story status to review
 
 ## Dev Agent Record
 
