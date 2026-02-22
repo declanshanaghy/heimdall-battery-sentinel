@@ -1,6 +1,6 @@
 # 4.3 Infinite Scroll Feature
 
-Status: review
+Status: in-progress
 <!-- NOTE: Status values MUST match sprint-status.yaml exactly: backlog | ready-for-dev | in-progress | review | done -->
 
 ## Story
@@ -71,3 +71,4 @@ N/A - No issues encountered
 ## Change Log
 - 2026-02-21: Story created from Epic 4
 - 2026-02-22: Story implementation completed - Updated IntersectionObserver threshold and error handling
+- 2026-02-22: Story Acceptance — CHANGES_REQUESTED (1 blocking item)

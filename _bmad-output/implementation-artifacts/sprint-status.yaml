@@ -55,7 +55,7 @@ epics:
   - id: 4-3
     slug: infinite-scroll
     title: Infinite Scroll
-    status: review
+    status: in-progress
   - id: 4-4
     slug: entity-linking
     title: Entity Linking
