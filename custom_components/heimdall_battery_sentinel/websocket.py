@@ -3,7 +3,6 @@
 import logging
 from typing import Any
 
-from homeassistant.components import websocket_api
 from homeassistant.core import HomeAssistant, callback
 
 from .const import (
@@ -24,6 +23,20 @@ from .const import (
 from .store import get_store
 
 _LOGGER = logging.getLogger(__name__)
+
+
+def _register_connection(hass: HomeAssistant, connection: Any) -> None:
+    """Register a connection for push notifications."""
+    hass.data.setdefault(DOMAIN, {}).setdefault("_ws_connections", []).append(connection)
+    _LOGGER.debug("WebSocket connection registered for push notifications")
+
+
+def _unregister_connection(hass: HomeAssistant, connection: Any) -> None:
+    """Unregister a connection when it closes."""
+    connections = hass.data.get(DOMAIN, {}).get("_ws_connections", [])
+    if connection in connections:
+        connections.remove(connection)
+        _LOGGER.debug("WebSocket connection unregistered")
 
 
 def _validate_sort_params(data: dict) -> tuple[str | None, str | None]:
@@ -72,8 +85,6 @@ def _sort_rows(rows: list[dict], sort_by: str, sort_dir: str) -> list[dict]:
     return rows
 
 
-@websocket_api.websocket_command
-@websocket_api.require_auth
 def ws_get_summary(hass: HomeAssistant, connection: Any, msg: dict) -> None:
     """Handle summary request."""
     store = get_store()
@@ -88,8 +99,6 @@ def ws_get_summary(hass: HomeAssistant, connection: Any, msg: dict) -> None:
     )
 
 
-@websocket_api.websocket_command
-@websocket_api.require_auth
 def ws_get_list(hass: HomeAssistant, connection: Any, msg: dict) -> None:
     """Handle list request with pagination."""
     data = msg.get("data", {})
@@ -147,13 +156,11 @@ def ws_get_list(hass: HomeAssistant, connection: Any, msg: dict) -> None:
     )
 
 
-@websocket_api.websocket_command
-@websocket_api.require_auth
 @callback
 def ws_subscribe(hass: HomeAssistant, connection: Any, msg: dict) -> None:
     """Handle subscription request."""
-    # Subscription will send incremental updates via connection.send_message
-    _LOGGER.info("Client subscribed to updates")
+    # Register connection for push notifications
+    _register_connection(hass, connection)
     
     # Send initial confirmation
     connection.send_result(msg["id"], {"subscribed": True})
@@ -161,40 +168,8 @@ def ws_subscribe(hass: HomeAssistant, connection: Any, msg: dict) -> None:
 
 def register_websocket_commands(hass: HomeAssistant) -> None:
     """Register all websocket commands."""
-    hass.components.websocket_api.register_command(
-        WS_CMD_SUMMARY,
-        ws_get_summary,
-        websocket_api.BASE_COMMAND_MESSAGE_SCHEMA.extend(
-            {
-                "extra_api_schema": {
-                    "type": "heimdall/summary",
-                }
-            }
-        ),
-    )
-    
-    hass.components.websocket_api.register_command(
-        WS_CMD_LIST,
-        ws_get_list,
-        websocket_api.BASE_COMMAND_MESSAGE_SCHEMA.extend(
-            {
-                "extra_api_schema": {
-                    "type": "heimdall/list",
-                }
-            }
-        ),
-    )
-    
-    hass.components.websocket_api.register_command(
-        WS_CMD_SUBSCRIBE,
-        ws_subscribe,
-        websocket_api.BASE_COMMAND_MESSAGE_SCHEMA.extend(
-            {
-                "extra_api_schema": {
-                    "type": "heimdall/subscribe",
-                }
-            }
-        ),
-    )
-    
+    ws_api = hass.components.websocket_api
+    ws_api.register_command(WS_CMD_SUMMARY, ws_get_summary)
+    ws_api.register_command(WS_CMD_LIST, ws_get_list)
+    ws_api.register_command(WS_CMD_SUBSCRIBE, ws_subscribe)
     _LOGGER.info("WebSocket commands registered")

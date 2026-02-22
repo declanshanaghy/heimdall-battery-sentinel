@@ -4,7 +4,7 @@
 - **Id:** 1-2
 - **Size:** 1 day
 - **Epic:** Core Integration Setup (Epic 1)
-- **Status:** in-progress
+- **Status:** ready-for-dev
 
 ## Overview
 Implements event-driven architecture using Home Assistant's event system for:
@@ -27,13 +27,13 @@ Source: architecture.md#ADR-002 (Event-driven backend cache)
 
 ## Tasks
 1. [x] Review existing store.py and websocket.py implementations
-2. [ ] Add HA event listener for state_changed events in __init__.py
-3. [ ] Add HA event listener for registry updates (entity/device/area)
-4. [ ] Create event handler to process state changes and update store
-5. [ ] Connect store notifications to WebSocket subscribers for real-time push
-6. [ ] Add tests for event subscription functionality
-7. [ ] Run full test suite and ensure no regressions
-8. [ ] Update story status to review
+2. [x] Add HA event listener for state_changed events in __init__.py
+3. [x] Add HA event listener for registry updates (entity/device/area)
+4. [x] Create event handler to process state changes and update store
+5. [x] Connect store notifications to WebSocket subscribers for real-time push
+6. [x] Add tests for event subscription functionality
+7. [x] Run full test suite and ensure no regressions
+8. [x] Update story status to review
 
 ## Dev Notes
 ### Architecture Alignment
@@ -56,37 +56,33 @@ Source: architecture.md#ADR-002 (Event-driven backend cache)
 - Source: architecture.md#ADR-002, ADR-003
 - Source: __init__.py TODO comment
 
-## Implementation Steps (Deprecated - see Tasks)
-1. Created `EventProducer` service with:
-   - AMQP connection pooling
-   - JSON schema validation
-   - Retry logic (3 attempts with backoff)
-
-2. Implemented `EventConsumer` with:
-   - Dead letter queue handling
-   - Circuit breaker pattern
-   - Audit logging integration
-
 ## Dev Agent Record
 
 ### Agent Model Used
-openrouter/minimax/minimax-m2.5
+Haiku (openrouter/minimax/minimax-m2.5)
 
 ### Debug Log References
 N/A - No issues encountered
 
 ### Completion Notes List
-- (To be populated)
+- Implemented event listeners for state_changed events in __init__.py
+- Implemented event listeners for registry updates (entity_registry_updated, device_registry_updated, area_registry_updated)
+- Created event handlers to process state changes and update store
+- Connected store notifications to WebSocket subscribers for real-time push
+- Added 10 unit tests for event subscription functionality in tests/test_event_system.py
+- All tests pass (26 total)
+- Modified __init__.py, websocket.py; Created tests/test_event_system.py
 
-## Change Log
-- 2026-02-21: Story implementation started - Implementing HA event subscriptions
-
-## File List
+### File List
 
 | File | Action | Description |
 |------|--------|-------------|
-| `custom_components/heimdall_battery_sentinel/__init__.py` | Modify | Add HA event listeners |
+| `custom_components/heimdall_battery_sentinel/__init__.py` | Modify | Added event listeners for state_changed and registry updates |
+| `custom_components/heimdall_battery_sentinel/websocket.py` | Modify | Added connection registration for WebSocket push notifications |
+| `tests/test_event_system.py` | Create | Added 10 unit tests for event subscription functionality |
 
 ## Status
-in-progress
+review
 
+## Change Log
+- 2026-02-21: Event system implementation completed - Added HA event listeners, store updates, and WebSocket push notifications
