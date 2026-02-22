@@ -22,12 +22,16 @@ class Store:
     unavailable: DatasetState = field(default_factory=DatasetState)
     _subscribers: dict[str, Callable[[dict], None]] = field(default_factory=dict)
     
-    def increment_version(self, tab: TabType) -> None:
+    def increment_version(self, tab: TabType, event: dict | None = None) -> None:
         """Increment dataset version for the given tab."""
         if tab == "low_battery":
             self.low_battery.version += 1
         else:
             self.unavailable.version += 1
+        
+        # Notify subscribers of the change
+        if event:
+            self.notify_subscribers(event)
     
     def get_version(self, tab: TabType) -> int:
         """Get current dataset version for the tab."""

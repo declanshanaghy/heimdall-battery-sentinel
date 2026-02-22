@@ -103,13 +103,7 @@ def _update_low_battery_store(
     if state is None:
         # Entity was removed - remove from store
         if store.remove_row(TAB_LOW_BATTERY, entity_id):
-            store.increment_version(TAB_LOW_BATTERY)
-            store.notify_subscribers({
-                "type": "remove",
-                "tab": TAB_LOW_BATTERY,
-                "entity_id": entity_id,
-            })
-            _notify_websocket(hass, {
+            store.increment_version(TAB_LOW_BATTERY, {
                 "type": "remove",
                 "tab": TAB_LOW_BATTERY,
                 "entity_id": entity_id,
@@ -145,13 +139,7 @@ def _update_low_battery_store(
         )
         
         store.upsert_row(TAB_LOW_BATTERY, row)
-        store.increment_version(TAB_LOW_BATTERY)
-        store.notify_subscribers({
-            "type": "upsert",
-            "tab": TAB_LOW_BATTERY,
-            "row": row,
-        })
-        _notify_websocket(hass, {
+        store.increment_version(TAB_LOW_BATTERY, {
             "type": "upsert",
             "tab": TAB_LOW_BATTERY,
             "row": row,
@@ -159,13 +147,7 @@ def _update_low_battery_store(
     else:
         # Was previously low but no longer
         if store.remove_row(TAB_LOW_BATTERY, entity_id):
-            store.increment_version(TAB_LOW_BATTERY)
-            store.notify_subscribers({
-                "type": "remove",
-                "tab": TAB_LOW_BATTERY,
-                "entity_id": entity_id,
-            })
-            _notify_websocket(hass, {
+            store.increment_version(TAB_LOW_BATTERY, {
                 "type": "remove",
                 "tab": TAB_LOW_BATTERY,
                 "entity_id": entity_id,
@@ -183,13 +165,7 @@ def _update_unavailable_store(
     if state is None:
         # Entity was removed - remove from store
         if store.remove_row(TAB_UNAVAILABLE, entity_id):
-            store.increment_version(TAB_UNAVAILABLE)
-            store.notify_subscribers({
-                "type": "remove",
-                "tab": TAB_UNAVAILABLE,
-                "entity_id": entity_id,
-            })
-            _notify_websocket(hass, {
+            store.increment_version(TAB_UNAVAILABLE, {
                 "type": "remove",
                 "tab": TAB_UNAVAILABLE,
                 "entity_id": entity_id,
@@ -213,11 +189,6 @@ def _update_unavailable_store(
         
         store.upsert_row(TAB_UNAVAILABLE, row)
         store.increment_version(TAB_UNAVAILABLE)
-        store.notify_subscribers({
-            "type": "upsert",
-            "tab": TAB_UNAVAILABLE,
-            "row": row,
-        })
         _notify_websocket(hass, {
             "type": "upsert",
             "tab": TAB_UNAVAILABLE,
@@ -227,11 +198,6 @@ def _update_unavailable_store(
         # Was previously unavailable but no longer
         if store.remove_row(TAB_UNAVAILABLE, entity_id):
             store.increment_version(TAB_UNAVAILABLE)
-            store.notify_subscribers({
-                "type": "remove",
-                "tab": TAB_UNAVAILABLE,
-                "entity_id": entity_id,
-            })
             _notify_websocket(hass, {
                 "type": "remove",
                 "tab": TAB_UNAVAILABLE,

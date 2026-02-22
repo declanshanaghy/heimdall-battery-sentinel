@@ -26,17 +26,32 @@ _LOGGER = logging.getLogger(__name__)
 
 
 def _register_connection(hass: HomeAssistant, connection: Any) -> None:
-    """Register a connection for push notifications."""
-    hass.data.setdefault(DOMAIN, {}).setdefault("_ws_connections", []).append(connection)
-    _LOGGER.debug("WebSocket connection registered for push notifications")
+    """Register a connection for push notifications via store subscription."""
+    store = get_store()
+    
+    @callback
+    def _handle_store_notification(event: dict) -> None:
+        """Handle store notifications and forward to websocket connection."""
+        try:
+            connection.send_message(event)
+        except Exception:
+            # Connection might be closed, unsubscribe to clean up
+            store.unsubscribe(sub_id)
+            _LOGGER.debug("WebSocket connection closed, unsubscribed from store")
+    
+    sub_id = store.subscribe(_handle_store_notification)
+    # Store subscription ID on connection for cleanup
+    connection._store_sub_id = sub_id
+    _LOGGER.debug("WebSocket connection subscribed to store for push notifications")
 
 
 def _unregister_connection(hass: HomeAssistant, connection: Any) -> None:
     """Unregister a connection when it closes."""
-    connections = hass.data.get(DOMAIN, {}).get("_ws_connections", [])
-    if connection in connections:
-        connections.remove(connection)
-        _LOGGER.debug("WebSocket connection unregistered")
+    store = get_store()
+    sub_id = getattr(connection, '_store_sub_id', None)
+    if sub_id:
+        store.unsubscribe(sub_id)
+        _LOGGER.debug("WebSocket connection unsubscribed from store")
 
 
 def _validate_sort_params(data: dict) -> tuple[str | None, str | None]:
