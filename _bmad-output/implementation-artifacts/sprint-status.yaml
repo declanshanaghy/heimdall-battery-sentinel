@@ -15,6 +15,7 @@ epics:
     status: done
 - id: 2
   title: Battery Monitoring
+  status: done
   stories:
   - id: 2-1
     slug: numeric-battery
