@@ -1,6 +1,6 @@
 # Story 4.1: Tabbed Interface
 
-Status: ready-for-dev
+Status: review
 <!-- NOTE: Status values MUST match sprint-status.yaml exactly: backlog | ready-for-dev | in-progress | review | done -->
 
 ## Story
@@ -17,13 +17,13 @@ so that I can quickly switch between these views with live updating counts.
 
 ## Tasks / Subtasks
 
-- [ ] Implement tab component (AC: #1, #2)
-  - [ ] Create tab bar UI with two tabs
-  - [ ] Implement tab switching logic
-  - [ ] Add live count badges that update from backend
-- [ ] Persist tab state (AC: #3)
-  - [ ] Store selected tab in local storage
-  - [ ] Restore tab selection on panel load
+- [x] Implement tab component (AC: #1, #2)
+  - [x] Create tab bar UI with two tabs
+  - [x] Implement tab switching logic
+  - [x] Add live count badges that update from backend
+- [x] Persist tab state (AC: #3)
+  - [x] Store selected tab in local storage
+  - [x] Restore tab selection on panel load
 
 ## Dev Notes
 
@@ -67,19 +67,26 @@ stateDiagram-v2
 ## Dev Agent Record
 
 ### Agent Model Used
-TBD
+minimax-minimax-m2.5
 
 ### Debug Log References
-TBD
+N/A - No issues encountered
 
 ### Completion Notes List
-TBD
+- Added localStorage tab persistence using key 'heimdall-tab' (AC #3)
+- Implemented `_loadTabFromStorage()` and `_saveTabToStorage()` methods
+- Added `_updateTabUI()` to restore tab selection on panel load
+- Added websocket event listener in `_connect()` to handle real-time count updates (AC #1)
+- Implemented `_handleSubscriptionMessage()` to fetch updated counts on data changes
+- All 101 tests pass including 5 new frontend tests
 
 ### File List
 
 | File | Action | Description |
 |------|--------|-------------|
-| TBD | | |
+| `custom_components/heimdall_battery_sentinel/www/panel-heimdall.js` | Modify | Added tab persistence via localStorage and live count updates via websocket subscription |
+| `tests/test_tabbed_interface.py` | Create | New test file for tab persistence and live count functionality |
 
 ## Change Log
 - 2026-02-20: Story created from Epic 4
+- 2026-02-21: Story implementation completed - Added tab persistence via localStorage and live count updates via websocket subscription

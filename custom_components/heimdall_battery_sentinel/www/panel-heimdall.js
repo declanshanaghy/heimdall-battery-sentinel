@@ -3,11 +3,13 @@
  * Plain JavaScript module for Home Assistant custom panel
  */
 
+const TAB_STORAGE_KEY = 'heimdall-tab';
+
 class HeimdallPanel {
   constructor() {
     this.hass = null;
     this.connected = false;
-    this.activeTab = 'low_battery';
+    this.activeTab = this._loadTabFromStorage();
     this.data = {
       low_battery: [],
       unavailable: []
@@ -20,6 +22,26 @@ class HeimdallPanel {
     this.endReached = { low_battery: false, unavailable: false };
     this.datasetVersion = { low_battery: 0, unavailable: 0 };
     this.subscriptionId = null;
+  }
+
+  _loadTabFromStorage() {
+    try {
+      const saved = localStorage.getItem(TAB_STORAGE_KEY);
+      if (saved === 'low_battery' || saved === 'unavailable') {
+        return saved;
+      }
+    } catch (e) {
+      // localStorage not available
+    }
+    return 'low_battery';
+  }
+
+  _saveTabToStorage(tab) {
+    try {
+      localStorage.setItem(TAB_STORAGE_KEY, tab);
+    } catch (e) {
+      // localStorage not available
+    }
   }
 
   async connectedCallback() {
@@ -126,7 +148,15 @@ class HeimdallPanel {
     `;
 
     this._attachListeners();
+    this._updateTabUI();
     await this._connect();
+  }
+
+  _updateTabUI() {
+    // Set initial active tab in UI from storage
+    this.querySelectorAll('.tab').forEach(t => {
+      t.classList.toggle('active', t.dataset.tab === this.activeTab);
+    });
   }
 
   _attachListeners() {
@@ -140,6 +170,7 @@ class HeimdallPanel {
 
   async setActiveTab(tab) {
     this.activeTab = tab;
+    this._saveTabToStorage(tab);
     this.querySelectorAll('.tab').forEach(t => {
       t.classList.toggle('active', t.dataset.tab === tab);
     });
@@ -153,9 +184,31 @@ class HeimdallPanel {
 
   async _connect() {
     this.hass = window.hass;
+    
+    // Listen for subscription events from backend
+    this.hass.connection.addEventListener('message', (event) => {
+      const msg = event.data;
+      this._handleSubscriptionMessage(msg);
+    });
+    
     await this._fetchSummary();
     await this._subscribe();
     this._render();
+  }
+
+  _handleSubscriptionMessage(msg) {
+    // Handle subscription event messages
+    // These are pushed from the store when data changes
+    if (!msg || msg.type !== 'event') return;
+    
+    const event = msg.event || msg;
+    const eventType = event.type;
+    
+    // Handle summary updates (count changes)
+    if (eventType === 'summary' || eventType === 'upsert' || eventType === 'remove' || eventType === 'invalidated') {
+      // Fetch updated counts when any data changes
+      this._fetchSummary();
+    }
   }
 
   async _fetchSummary() {

@@ -47,7 +47,7 @@ epics:
   - id: 4-1
     slug: tabbed-interface
     title: Tabbed Interface
-    status: ready-for-dev
+    status: review
   - id: 4-2
     slug: sortable-tables
     title: Sortable Tables
