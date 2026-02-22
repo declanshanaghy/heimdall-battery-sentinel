@@ -18,7 +18,8 @@ class TestEvaluateNumericBattery:
         
         assert is_low is True
         assert numeric == 14.0
-        assert severity == Severity.ORANGE
+        # ratio = (14/15)*100 = 93.33... → YELLOW (67-100)
+        assert severity == Severity.YELLOW
 
     def test_numeric_battery_below_threshold_is_low(self):
         """Test numeric battery below threshold is flagged as low."""
@@ -26,7 +27,8 @@ class TestEvaluateNumericBattery:
         
         assert is_low is True
         assert numeric == 10.0
-        assert severity == Severity.RED
+        # ratio = (10/15)*100 = 66.66... → YELLOW (67-100)
+        assert severity == Severity.YELLOW
 
     def test_numeric_battery_at_threshold_is_low(self):
         """Test numeric battery at threshold is flagged as low."""
@@ -34,8 +36,8 @@ class TestEvaluateNumericBattery:
         
         assert is_low is True
         assert numeric == 15.0
-        # 15 is in 11-20 range, which is ORANGE
-        assert severity == Severity.ORANGE
+        # ratio = (15/15)*100 = 100 → YELLOW (67-100)
+        assert severity == Severity.YELLOW
 
     def test_numeric_battery_above_threshold_not_low(self):
         """Test numeric battery above threshold is not low."""
@@ -113,26 +115,33 @@ class TestEvaluateNumericBattery:
         assert severity is None
 
     def test_severity_red_for_very_low(self):
-        """Test severity is RED for very low batteries (10% or below)."""
-        is_low, numeric, severity = evaluate_numeric_battery("5", "%", 15)
+        """Test severity is RED for very low batteries (ratio 0-33).
+        
+        With threshold 15, values 0-4 give ratio 0-26.66... → RED.
+        """
+        # ratio = (4/15)*100 = 26.66... → RED (0-33 inclusive)
+        is_low, numeric, severity = evaluate_numeric_battery("4", "%", 15)
         
         assert is_low is True
         assert severity == Severity.RED
 
     def test_severity_orange_for_low(self):
-        """Test severity is ORANGE for low batteries (11-20%)."""
-        is_low, numeric, severity = evaluate_numeric_battery("15", "%", 15)
+        """Test severity is ORANGE for low batteries (ratio 34-66).
+        
+        With threshold 15, values 5-9 give ratio 33.33...-60 → ORANGE.
+        """
+        # ratio = (7/15)*100 = 46.66... → ORANGE (34-66)
+        is_low, numeric, severity = evaluate_numeric_battery("7", "%", 15)
         
         assert is_low is True
-        # 15 is in 11-20 range = ORANGE
         assert severity == Severity.ORANGE
 
     def test_severity_yellow_for_moderate(self):
-        """Test severity is YELLOW for moderate low batteries (>20%)."""
+        """Test severity is YELLOW for moderate low batteries (ratio 67-100)."""
+        # ratio = (25/30)*100 = 83.33... → YELLOW (67-100)
         is_low, numeric, severity = evaluate_numeric_battery("25", "%", 30)
         
         assert is_low is True
-        # 25 > 20 = YELLOW
         assert severity == Severity.YELLOW
 
     def test_custom_threshold(self):
@@ -148,12 +157,13 @@ class TestEvaluateBattery:
 
     def test_numeric_low_battery_returns_correct_dict(self):
         """Test numeric low battery returns correct dictionary structure."""
+        # ratio = (10/15)*100 = 66.66... → YELLOW (67-100)
         result = evaluate_battery("10", "%", 15)
         
         assert result["is_low"] is True
         assert result["display"] == "10%"
         assert result["numeric"] == 10.0
-        assert result["severity"] == Severity.RED
+        assert result["severity"] == Severity.YELLOW
 
     def test_numeric_not_low_returns_empty_display(self):
         """Test numeric not low returns empty display."""

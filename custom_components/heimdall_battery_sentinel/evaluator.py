@@ -14,6 +14,11 @@ def evaluate_numeric_battery(state: str, unit: str | None, threshold: int) -> tu
     Evaluate numeric battery state.
     
     Returns: (is_low, numeric_value, severity)
+    
+    Severity is calculated based on ratio = (battery_level / threshold) * 100:
+    - Critical: ratio 0-33 (inclusive) → red
+    - Warning: ratio 34-66 → orange
+    - Notice: ratio 67-100 → yellow
     """
     if unit != "%":
         return False, None, None
@@ -27,12 +32,15 @@ def evaluate_numeric_battery(state: str, unit: str | None, threshold: int) -> tu
     
     if not is_low:
         severity = None
-    elif value <= 10:
-        severity = Severity(SEVERITY_RED)
-    elif value <= 20:
-        severity = Severity(SEVERITY_ORANGE)
     else:
-        severity = Severity(SEVERITY_YELLOW)
+        # Calculate ratio-based severity (AC #1, #2)
+        ratio = (value / threshold) * 100
+        if ratio <= 33:
+            severity = Severity(SEVERITY_RED)
+        elif ratio <= 66:
+            severity = Severity(SEVERITY_ORANGE)
+        else:
+            severity = Severity(SEVERITY_YELLOW)
     
     return is_low, value, severity
 
