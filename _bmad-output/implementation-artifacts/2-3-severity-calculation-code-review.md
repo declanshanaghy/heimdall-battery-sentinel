@@ -3,15 +3,16 @@
 **Story:** 2-3-severity-calculation
 **Reviewer:** MiniMax MiniMax M2.5
 **Date:** 2026-02-21
-**Overall Verdict:** CHANGES_REQUESTED
+**Overall Verdict:** ACCEPTED
 
 ## Prior Epic Recommendations
 
-No prior retrospective available for application — only Epic 1 retrospective exists and it doesn't contain explicit "Recommendations to Carry Forward" or "Patterns That Triggered Rework" sections.
+Epic 1 retrospective available. Below are the recommendations checked against this story:
 
 | Recommendation | Source Epic | Status |
 |---------------|-------------|--------|
-| N/A | - | - |
+| Avoid Documentation Drift - Ensure File List matches git reality | Epic 1 | ✅ Followed - File List now includes panel-heimdall.js |
+| Avoid redundant/dead code paths | Epic 1 | ✅ Followed - calculate_severity() dead function was removed |
 
 ## Checklist Verification
 
@@ -22,63 +23,58 @@ No prior retrospective available for application — only Epic 1 retrospective e
 - [x] Code quality review performed on changed files
 - [x] Security review performed
 - [x] Tests verified to exist and pass
+- [x] Previous code review issues verified as fixed
 
 ## Acceptance Criteria Validation
 
 | AC | Status | Evidence |
 |----|--------|----------|
-| AC1 | PASS | evaluator.py:ratio = (value / threshold) * 100 correctly implemented |
-| AC2 | PASS | Severity boundaries: <=33 RED, <=66 ORANGE, else YELLOW - matches spec exactly |
-| AC3 | PASS | evaluate_battery() assigns Severity.RED to textual 'low' |
-| AC4 | FAIL | Colors implemented in frontend (panel-heimdall.js:76-78) but **icons are missing** |
+| AC1 | PASS | evaluator.py:ratio = (value / threshold) * 100 correctly implements ratio-based severity |
+| AC2 | PASS | Severity boundaries: <=33 RED, <=66 ORANGE, else YELLOW - matches spec. Test assertions fixed to use correct boundary values (4→RED, 7→ORANGE, 10→YELLOW) |
+| AC3 | PASS | evaluate_battery() assigns Severity.RED to textual 'low' state (line 67-70) |
+| AC4 | PASS | Colors AND icons implemented in panel-heimdall.js: mdi:battery-alert (red), mdi:battery-low (orange), mdi:battery-medium (yellow) |
 | AC5 | PASS | threshold parameter passed to evaluate_numeric_battery() and used in ratio calculation |
+
+## Previous Code Review Follow-up
+
+The previous code review (fd6af01) identified these issues which have now been addressed:
+
+| ID | Previous Finding | Resolution Status |
+|----|---------|------------------|
+| CRIT-1 | AC4 icons not implemented | ✅ FIXED - Icons now present in panel-heimdall.js |
+| HIGH-1 | File List incomplete | ✅ FIXED - panel-heimdall.js now in File List |
+| MED-1 | Dead code calculate_severity() | ✅ FIXED - Function removed |
 
 ## Findings
 
-### 🔴 CRITICAL Issues
+No issues found. All acceptance criteria are met.
 
-| ID | Finding | File:Line | Resolution |
-|----|---------|-----------|------------|
-| CRIT-1 | AC4 requires icons but they are not implemented | panel-heimdall.js | Add mdi:battery-alert (Critical), mdi:battery-low (Warning), mdi:battery-medium (Notice) icons to severity rows |
+### 🟢 LOW Observations (Non-blocking)
 
-### 🟠 HIGH Issues
-
-| ID | Finding | File:Line | Resolution |
-|----|---------|-----------|------------|
-| HIGH-1 | Story File List incomplete - missing frontend changes | 2-3-severity-calculation.md | AC4 requires frontend icon changes but file list only shows evaluator.py and test_numeric_battery.py |
-
-### 🟡 MEDIUM Issues
-
-| ID | Finding | File:Line | Resolution |
-|----|---------|-----------|------------|
-| MED-1 | Dead code in evaluator.py | evaluator.py:72-79 | calculate_severity() function uses old logic (10/20 thresholds) and is never called - should be removed |
-
-### 🟢 LOW Issues
-
-| ID | Finding | File:Line | Resolution |
-|----|---------|-----------|------------|
-| LOW-1 | Test comment slight mismatch | test_numeric_battery.py:58 | Comment says "ratio 33.33...-60 → ORANGE" but upper boundary should be 66 (not 60) based on actual test of 7/15=46.67 |
+| ID | Finding | File:Line | Notes |
+|----|---------|-----------|-------|
+| OBS-1 | Test comment minor improvement | test_numeric_battery.py:58 | Comment could clarify boundary behavior for 33.33% repeating decimal |
 
 ## Verification Commands
 
 ```bash
-npm run build  # N/A - Python project
-npm run lint   # N/A - Python project
-npm run test   # PASS - 84 tests pass
-```
-
-```bash
+python -m pytest tests/ -v              # PASS - 84 tests pass
 python -m pytest tests/test_numeric_battery.py -v  # PASS - 18 tests pass
 ```
 
 ## Summary
 
-The backend implementation (evaluator.py) is correct and all tests pass. However:
+Story 2-3 severity calculation is now complete and meets all acceptance criteria:
 
-1. **CRITICAL**: AC4 explicitly requires icons (mdi:battery-alert, mdi:battery-low, mdi:battery-medium) for each severity level. The frontend only has color CSS classes, no icons are rendered.
+- **AC1**: Ratio-based severity calculation implemented correctly
+- **AC2**: Severity boundaries (Critical 0-33, Warning 34-66, Notice 67-100) match specification with corrected test assertions
+- **AC3**: Textual 'low' batteries get fixed Critical severity
+- **AC4**: Both colors and icons implemented in frontend
+- **AC5**: Threshold configurable and used in calculations
 
-2. **HIGH**: The story's File List is incomplete - it doesn't include the frontend changes needed to implement AC4's icon requirement. This is a documentation discrepancy vs. what would actually need to change.
+Previous code review issues have all been resolved:
+1. Icons added to panel-heimdall.js
+2. File List updated to include frontend changes
+3. Dead code calculate_severity() removed
 
-3. **MEDIUM**: There's a dead function `calculate_severity()` in evaluator.py that uses old thresholds (10/20) instead of the ratio-based logic. It's never called anywhere.
-
-**All Acceptance Criteria must pass for story acceptance.** AC4 is not fully implemented.
+All 84 tests pass. Code is clean and ready for acceptance.
