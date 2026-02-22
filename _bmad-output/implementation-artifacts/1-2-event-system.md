@@ -4,7 +4,7 @@
 - **Id:** 1-2
 - **Size:** 1 day
 - **Epic:** Core Integration Setup (Epic 1)
-- **Status:** review
+- **Status:** done
 
 ## Overview
 Implements event-driven architecture using Home Assistant's event system for:
@@ -82,9 +82,10 @@ N/A - No issues encountered
 | `tests/test_event_system.py` | Create | Added 10 unit tests for event subscription functionality |
 
 ## Status
-completed
+done
 
 ## Change Log
 - 2026-02-21: Event system implementation completed - Added HA event listeners, store updates, and WebSocket push notifications
 - 2026-02-21: Story Acceptance — CHANGES_REQUESTED (1 blocking items)
+- 2026-02-21: Story Acceptance — ACCEPTED
 - 2026-02-21: Fix applied - Removed redundant WebSocket notification (HIGH-1). Now using store's subscriber mechanism as single source of truth.
