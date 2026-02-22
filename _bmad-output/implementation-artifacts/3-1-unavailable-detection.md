@@ -5,7 +5,7 @@
 **Size:** 1 day
 
 ## Status
-review
+done
 
 ## Tasks
 1. [x] Review existing _update_unavailable_store implementation in __init__.py
@@ -63,6 +63,7 @@ N/A - No issues encountered
 
 ## Change Log
 - [2026-02-21] Story implementation completed - verified existing implementation meets AC
+- [2026-02-21] Story Acceptance — ACCEPTED
 
 ### File List
 
