@@ -29,7 +29,7 @@ Implement core battery monitoring for numeric battery entities meeting Home Assi
 - Source: architecture.md#ADR-004 (server-side sorting)
 
 ## Status
-in-progress
+review
 
 ## Tasks
 1. [x] Review existing evaluator.py and store.py implementations
@@ -39,6 +39,7 @@ in-progress
 5. [x] Add tests for paging and sorting functionality
 6. [x] Run full test suite and ensure no regressions
 7. [x] Update story status to review
+8. [x] Fix AC #4: Implement device-level battery deduplication
 
 ## Dev Agent Record
 
@@ -57,6 +58,12 @@ N/A - No issues encountered
 - Implemented server-side sorting with _sort_rows() function supporting friendly_name, area, battery_level, entity_id sort keys
 - Implemented stable tie-breaker: friendly_name (casefolded), then entity_id
 - All 58 tests pass with no regressions
+- **REWORK FIX**: Implemented device-level battery deduplication (AC #4)
+  - Added `_get_device_id_for_entity()` helper to get device_id from registry
+  - Added `_find_entity_by_device()` helper to find existing entity by device_id
+  - Modified `_update_low_battery_store()` to filter by lowest entity_id per device
+  - For devices with multiple battery entities, only the one with lowest entity_id (lexicographically) is kept
+  - Added 10 unit tests for device deduplication in test_device_deduplication.py
 
 ### File List
 
@@ -64,7 +71,9 @@ N/A - No issues encountered
 |------|--------|-------------|
 | `tests/test_numeric_battery.py` | Create | Added 18 unit tests for numeric battery evaluation |
 | `tests/test_paging_sorting.py` | Create | Added 14 unit tests for paging and sorting |
+| `tests/test_device_deduplication.py` | Create | Added 10 unit tests for device-level deduplication |
 | `custom_components/heimdall_battery_sentinel/store.py` | Modify | Added server-side paging and sorting support |
+| `custom_components/heimdall_battery_sentinel/__init__.py` | Modify | Added device-level battery deduplication (AC #4) |
 
 ## Change Log
 - 2026-02-21: Story implementation started
@@ -72,3 +81,5 @@ N/A - No issues encountered
 - 2026-02-21: Paging and sorting tests added (14 tests)
 - 2026-02-21: Server-side paging/sorting implemented in store.py
 - 2026-02-21: Story Acceptance — CHANGES_REQUESTED (1 blocking items)
+- 2026-02-21: Fixed AC #4 - Device-level battery deduplication implemented
+- 2026-02-21: Added 10 unit tests for device deduplication, all 68 tests pass

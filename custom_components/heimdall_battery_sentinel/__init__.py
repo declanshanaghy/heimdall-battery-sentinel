@@ -92,6 +92,31 @@ def _process_state_change(
     _update_unavailable_store(hass, store, registry_cache, entity_id, new_state)
 
 
+def _get_device_id_for_entity(registry_cache: Any, entity_id: str) -> str | None:
+    """Get device_id for an entity from the registry cache."""
+    entity_info = registry_cache.get_entity_info(entity_id)
+    if entity_info:
+        return entity_info.get("device_id")
+    return None
+
+
+def _find_entity_by_device(store: Any, device_id: str, exclude_entity_id: str | None = None) -> str | None:
+    """Find an entity_id in the store that belongs to the given device_id.
+    
+    Returns the entity_id if found, None otherwise.
+    """
+    from .registry import get_registry_cache
+    registry_cache = get_registry_cache()
+    
+    for existing_entity_id in store.get_rows(TAB_LOW_BATTERY).keys():
+        if exclude_entity_id and existing_entity_id == exclude_entity_id:
+            continue
+        existing_device_id = _get_device_id_for_entity(registry_cache, existing_entity_id)
+        if existing_device_id == device_id:
+            return existing_entity_id
+    return None
+
+
 def _update_low_battery_store(
     hass: HomeAssistant,
     store: Any,
@@ -122,6 +147,30 @@ def _update_low_battery_store(
     result = evaluate_battery(state_value, unit, threshold)
     
     if result["is_low"]:
+        # Get device_id for this entity (for device-level deduplication)
+        device_id = _get_device_id_for_entity(registry_cache, entity_id)
+        
+        # Device-level deduplication: if device has multiple battery entities,
+        # keep only the one with lowest entity_id (ascending)
+        if device_id:
+            existing_entity_id = _find_entity_by_device(store, device_id, exclude_entity_id=entity_id)
+            if existing_entity_id:
+                # Entity from same device already exists - compare entity_ids
+                # Keep the one with lower entity_id (lexicographically)
+                if entity_id > existing_entity_id:
+                    # Current entity has higher entity_id, skip adding it
+                    # The existing entity stays in the store
+                    return
+                else:
+                    # Current entity has lower entity_id - remove the existing one
+                    # and add the current one
+                    store.remove_row(TAB_LOW_BATTERY, existing_entity_id)
+                    store.increment_version(TAB_LOW_BATTERY, {
+                        "type": "remove",
+                        "tab": TAB_LOW_BATTERY,
+                        "entity_id": existing_entity_id,
+                    })
+        
         # Resolve metadata
         metadata = registry_cache.resolve_metadata(entity_id)
         friendly_name = state.attributes.get("friendly_name", entity_id)
