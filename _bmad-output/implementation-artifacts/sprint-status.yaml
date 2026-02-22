@@ -7,7 +7,7 @@ epics:
   - id: 1-1
     slug: project-structure
     title: Project Structure Setup
-    status: review
+    status: done
   - id: 1-2
     slug: event-system
     title: Event Subscription System

@@ -4,7 +4,7 @@
 - **Id:** 1-1
 - **Size:** 1 day
 - **Epic:** Core Integration Setup (Epic 1)
-- **Status:** in-progress
+- **Status:** done
 
 ## Description
 Initialize the integration structure following Home Assistant custom integration patterns. Creates the foundational project structure with all required directories, files, and configurations to support the battery monitoring and unavailable tracking features.
@@ -92,6 +92,7 @@ N/A - No issues encountered
 
 ## Change Log
 - 2026-02-21: Story implementation completed - Created full HA custom integration structure
+- 2026-02-21: Story Acceptance — ACCEPTED
 
 ## File List
 
@@ -113,4 +114,4 @@ N/A - No issues encountered
 | `pyproject.toml` | Create | Python project configuration with pytest |
 
 ## Status
-review
+done
