@@ -27,7 +27,7 @@ epics:
   - id: 2-3
     slug: severity-calculation
     title: Severity Calculation
-    status: review
+    status: done
 - id: 3
   title: Unavailable Tracking
   stories:

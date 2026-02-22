@@ -1,7 +1,7 @@
 # Story 2-3: Severity Calculation
 
 ## Status
-review
+done
 
 ## Tasks
 1. [x] Review existing evaluator.py severity implementation
@@ -95,6 +95,7 @@ N/A - No issues encountered
 - [2026-02-20] Rewritten for Home Assistant percentage-based thresholding
 - [2026-02-21] Story implementation completed - ratio-based severity calculation with tests fixed to match AC2
 - [2026-02-21] Code review fixes: Added AC4 icons to frontend (mdi:battery-alert/low/medium), removed dead calculate_severity() function, updated file list
+- [2026-02-21] Story Acceptance — ACCEPTED
 
 ### File List
 
