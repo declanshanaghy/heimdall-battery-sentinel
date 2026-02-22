@@ -42,6 +42,7 @@ def evaluate_textual_battery(state: str) -> tuple[bool, str]:
     Evaluate textual battery state.
     
     Returns: (is_low, display_value)
+    Only 'low' state is considered low. 'medium' and 'high' are excluded.
     """
     state_lower = state.lower().strip() if state else ""
     
@@ -49,9 +50,11 @@ def evaluate_textual_battery(state: str) -> tuple[bool, str]:
         return False, ""
     
     is_low = state_lower == "low"
-    display_value = state_lower
     
-    return is_low, display_value
+    # Only return display value for 'low', exclude medium/high
+    if is_low:
+        return True, state_lower
+    return False, ""
 
 
 def evaluate_battery(state: str, unit: str | None, threshold: int) -> dict:
@@ -77,11 +80,13 @@ def evaluate_battery(state: str, unit: str | None, threshold: int) -> dict:
     is_low_text, display_text = evaluate_textual_battery(state)
     
     if is_low_text:
+        # Textual 'low' gets the most critical severity (RED) since it's the lowest textual state
+        # Also assign numeric=0 for proper sorting (lowest possible value)
         return {
             "is_low": True,
             "display": display_text,
-            "numeric": None,
-            "severity": None,
+            "numeric": 0,  # Sort as lowest possible value
+            "severity": Severity(SEVERITY_RED),  # Most critical severity for textual 'low'
         }
     
     return {

@@ -183,7 +183,9 @@ class TestTextualBattery:
         assert store.get_count(TAB_LOW_BATTERY) == 1
         row = store.get_rows(TAB_LOW_BATTERY)["sensor.battery_text"]
         assert row.battery_display == "low"
-        assert row.battery_numeric is None
+        # Textual 'low' gets numeric=0 for sorting and severity=RED
+        assert row.battery_numeric == 0
+        assert row.severity is not None
 
     def test_process_textual_medium_battery_not_included(self):
         """Test that 'medium' battery is not included in low battery."""
