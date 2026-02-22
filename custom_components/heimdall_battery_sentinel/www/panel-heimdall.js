@@ -17,6 +17,7 @@ class HeimdallPanel {
     this.counts = { low_battery: 0, unavailable: 0 };
     this.sortBy = 'friendly_name';
     this.sortDir = 'asc';
+    this.sortableColumns = ['friendly_name', 'area', 'battery_level', 'updated_at'];
     this.pages = { low_battery: 0, unavailable: 0 };
     this.loading = false;
     this.endReached = { low_battery: false, unavailable: false };
@@ -444,6 +445,7 @@ class HeimdallPanel {
             <th data-sort="friendly_name" tabindex="0">Name<span class="sort-icon ${this.sortBy === 'friendly_name' ? 'active' : ''}">${this.sortBy === 'friendly_name' ? (this.sortDir === 'asc' ? '↑' : '↓') : ''}</span></th>
             <th data-sort="area" tabindex="0">Area<span class="sort-icon ${this.sortBy === 'area' ? 'active' : ''}">${this.sortBy === 'area' ? (this.sortDir === 'asc' ? '↑' : '↓') : ''}</span></th>
             ${tab === 'low_battery' ? '<th data-sort="battery_level" tabindex="0">Battery<span class="sort-icon ${this.sortBy === \'battery_level\' ? \'active\' : \'\'}">' + (this.sortBy === 'battery_level' ? (this.sortDir === 'asc' ? '↑' : '↓') : '') + '</span></th>' : ''}
+            <th data-sort="updated_at" tabindex="0">Last Checked<span class="sort-icon ${this.sortBy === 'updated_at' ? 'active' : ''}">${this.sortBy === 'updated_at' ? (this.sortDir === 'asc' ? '↑' : '↓') : ''}</span></th>
             <th>Manufacturer</th>
             <th>Model</th>
           </tr>
@@ -461,11 +463,26 @@ class HeimdallPanel {
       const displayArea = row.area || 'Unassigned';
       const displayManufacturer = row.manufacturer || 'Unknown';
       const displayModel = row.model || 'Unknown';
+      
+      // Format the updated_at date
+      let displayLastChecked = 'Unknown';
+      if (row.updated_at) {
+        try {
+          const date = new Date(row.updated_at);
+          if (!isNaN(date.getTime())) {
+            displayLastChecked = date.toLocaleString();
+          }
+        } catch (e) {
+          displayLastChecked = row.updated_at;
+        }
+      }
+      
       html += `
         <tr>
           <td data-label="Name">${row.friendly_name || row.entity_id}</td>
           <td data-label="Area">${displayArea}</td>
           ${tab === 'low_battery' ? `<td data-label="Battery" class="${severityClass}">${iconHtml}${row.battery_display}</td>` : ''}
+          <td data-label="Last Checked">${displayLastChecked}</td>
           <td data-label="Manufacturer">${displayManufacturer}</td>
           <td data-label="Model">${displayModel}</td>
         </tr>

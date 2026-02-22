@@ -11,6 +11,7 @@ from custom_components.heimdall_battery_sentinel.const import (
     SORT_KEY_BATTERY_LEVEL,
     SORT_KEY_ENTITY_ID,
     SORT_KEY_FRIENDLY_NAME,
+    SORT_KEY_UPDATED_AT,
 )
 from custom_components.heimdall_battery_sentinel.models import LowBatteryRow, Severity, UnavailableRow
 from custom_components.heimdall_battery_sentinel.store import (
@@ -216,6 +217,105 @@ class TestSortRows:
         # Entity_id should be the final tie-breaker
         assert sorted_rows[0].entity_id == "sensor.battery_a"
         assert sorted_rows[1].entity_id == "sensor.battery_b"
+
+    def test_sort_by_updated_at_asc(self):
+        """Test sorting by updated_at ascending."""
+        rows = [
+            LowBatteryRow(
+                entity_id="sensor.new",
+                friendly_name="New Sensor",
+                manufacturer="Unknown",
+                model=None,
+                area="Living Room",
+                battery_display="15%",
+                battery_numeric=15.0,
+                severity=Severity.ORANGE,
+                updated_at=datetime(2026, 2, 21, 12, 0, 0),
+            ),
+            LowBatteryRow(
+                entity_id="sensor.old",
+                friendly_name="Old Sensor",
+                manufacturer="Unknown",
+                model=None,
+                area="Bedroom",
+                battery_display="10%",
+                battery_numeric=10.0,
+                severity=Severity.RED,
+                updated_at=datetime(2026, 2, 20, 12, 0, 0),
+            ),
+        ]
+        
+        sorted_rows = _sort_rows(rows, SORT_KEY_UPDATED_AT, SORT_ASC)
+        
+        # Oldest should be first (ascending)
+        assert sorted_rows[0].entity_id == "sensor.old"
+        assert sorted_rows[1].entity_id == "sensor.new"
+
+    def test_sort_by_updated_at_desc(self):
+        """Test sorting by updated_at descending."""
+        rows = [
+            LowBatteryRow(
+                entity_id="sensor.old",
+                friendly_name="Old Sensor",
+                manufacturer="Unknown",
+                model=None,
+                area="Bedroom",
+                battery_display="10%",
+                battery_numeric=10.0,
+                severity=Severity.RED,
+                updated_at=datetime(2026, 2, 20, 12, 0, 0),
+            ),
+            LowBatteryRow(
+                entity_id="sensor.new",
+                friendly_name="New Sensor",
+                manufacturer="Unknown",
+                model=None,
+                area="Living Room",
+                battery_display="15%",
+                battery_numeric=15.0,
+                severity=Severity.ORANGE,
+                updated_at=datetime(2026, 2, 21, 12, 0, 0),
+            ),
+        ]
+        
+        sorted_rows = _sort_rows(rows, SORT_KEY_UPDATED_AT, SORT_DESC)
+        
+        # Newest should be first (descending)
+        assert sorted_rows[0].entity_id == "sensor.new"
+        assert sorted_rows[1].entity_id == "sensor.old"
+
+    def test_sort_by_updated_at_none_handling(self):
+        """Test that None updated_at values sort last."""
+        rows = [
+            LowBatteryRow(
+                entity_id="sensor.with_date",
+                friendly_name="With Date",
+                manufacturer="Unknown",
+                model=None,
+                area="Living Room",
+                battery_display="15%",
+                battery_numeric=15.0,
+                severity=Severity.ORANGE,
+                updated_at=datetime(2026, 2, 21, 12, 0, 0),
+            ),
+            LowBatteryRow(
+                entity_id="sensor.without_date",
+                friendly_name="Without Date",
+                manufacturer="Unknown",
+                model=None,
+                area="Bedroom",
+                battery_display="10%",
+                battery_numeric=10.0,
+                severity=Severity.RED,
+                updated_at=None,
+            ),
+        ]
+        
+        sorted_rows = _sort_rows(rows, SORT_KEY_UPDATED_AT, SORT_ASC)
+        
+        # Row with date should be first, None should be last
+        assert sorted_rows[0].entity_id == "sensor.with_date"
+        assert sorted_rows[1].entity_id == "sensor.without_date"
 
 
 class TestGetPaginated:

@@ -30,6 +30,7 @@ SORT_KEY_FRIENDLY_NAME = "friendly_name"
 SORT_KEY_AREA = "area"
 SORT_KEY_BATTERY_LEVEL = "battery_level"
 SORT_KEY_ENTITY_ID = "entity_id"
+SORT_KEY_UPDATED_AT = "updated_at"
 
 # Severity levels
 SEVERITY_YELLOW = "yellow"

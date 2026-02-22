@@ -2,6 +2,7 @@
 
 import uuid
 from dataclasses import dataclass, field
+from datetime import datetime
 from typing import Any, Callable, Literal
 
 from .const import (
@@ -12,14 +13,15 @@ from .const import (
     SORT_KEY_ENTITY_ID,
     SORT_KEY_FRIENDLY_NAME,
     SORT_KEY_AREA,
+    SORT_KEY_UPDATED_AT,
 )
 from .models import LowBatteryRow, Severity, TabType, UnavailableRow
 
-SortKey = Literal["friendly_name", "area", "battery_level", "entity_id"]
+SortKey = Literal["friendly_name", "area", "battery_level", "entity_id", "updated_at"]
 SortDir = Literal["asc", "desc"]
 
 
-def _get_sort_value(row: LowBatteryRow | UnavailableRow, sort_key: SortKey) -> Any:
+def _get_sort_value(row: LowBatteryRow | UnavailableRow, sort_key: SortKey, sort_dir: SortDir = SORT_ASC) -> Any:
     """Get sort value for a row based on sort key."""
     if sort_key == SORT_KEY_FRIENDLY_NAME:
         # Case-fold friendly name for stable sorting
@@ -35,6 +37,12 @@ def _get_sort_value(row: LowBatteryRow | UnavailableRow, sort_key: SortKey) -> A
         return -1
     elif sort_key == SORT_KEY_ENTITY_ID:
         return row.entity_id.casefold()
+    elif sort_key == SORT_KEY_UPDATED_AT:
+        # Sort by updated_at timestamp - None sorts last
+        # Use datetime.max for ascending (so None comes last) and datetime.min for descending
+        if row.updated_at is None:
+            return datetime.max if sort_dir == SORT_ASC else datetime.min
+        return row.updated_at
     return row.entity_id.casefold()
 
 
@@ -48,7 +56,7 @@ def _sort_rows(
     row_list = list(rows)
     
     # Primary sort
-    row_list.sort(key=lambda r: _get_sort_value(r, sort_key), reverse=(sort_dir == SORT_DESC))
+    row_list.sort(key=lambda r: _get_sort_value(r, sort_key, sort_dir), reverse=(sort_dir == SORT_DESC))
     
     # Tie-breaker: friendly_name (casefolded), then entity_id
     def tie_breaker(row: LowBatteryRow | UnavailableRow) -> tuple:
@@ -60,7 +68,7 @@ def _sort_rows(
     row_list.sort(key=tie_breaker)
     
     # Re-apply primary sort after tie-breaker
-    row_list.sort(key=lambda r: _get_sort_value(r, sort_key), reverse=(sort_dir == SORT_DESC))
+    row_list.sort(key=lambda r: _get_sort_value(r, sort_key, sort_dir), reverse=(sort_dir == SORT_DESC))
     
     return row_list
 
