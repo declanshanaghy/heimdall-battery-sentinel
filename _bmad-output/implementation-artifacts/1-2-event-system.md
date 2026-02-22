@@ -82,8 +82,9 @@ N/A - No issues encountered
 | `tests/test_event_system.py` | Create | Added 10 unit tests for event subscription functionality |
 
 ## Status
-in-progress
+completed
 
 ## Change Log
 - 2026-02-21: Event system implementation completed - Added HA event listeners, store updates, and WebSocket push notifications
 - 2026-02-21: Story Acceptance — CHANGES_REQUESTED (1 blocking items)
+- 2026-02-21: Fix applied - Removed redundant WebSocket notification (HIGH-1). Now using store's subscriber mechanism as single source of truth.

@@ -188,8 +188,7 @@ def _update_unavailable_store(
         )
         
         store.upsert_row(TAB_UNAVAILABLE, row)
-        store.increment_version(TAB_UNAVAILABLE)
-        _notify_websocket(hass, {
+        store.increment_version(TAB_UNAVAILABLE, {
             "type": "upsert",
             "tab": TAB_UNAVAILABLE,
             "row": row,
@@ -197,8 +196,7 @@ def _update_unavailable_store(
     else:
         # Was previously unavailable but no longer
         if store.remove_row(TAB_UNAVAILABLE, entity_id):
-            store.increment_version(TAB_UNAVAILABLE)
-            _notify_websocket(hass, {
+            store.increment_version(TAB_UNAVAILABLE, {
                 "type": "remove",
                 "tab": TAB_UNAVAILABLE,
                 "entity_id": entity_id,
@@ -304,36 +302,15 @@ async def _refresh_entity_metadata(hass: HomeAssistant) -> None:
     for entity_id, state in hass.states.all.items():
         _process_state_change(hass, store, registry_cache, entity_id, None, state)
     
-    store.increment_version(TAB_LOW_BATTERY)
-    store.increment_version(TAB_UNAVAILABLE)
-    
-    # Notify about invalidation
-    _notify_websocket(hass, {
+    store.increment_version(TAB_LOW_BATTERY, {
         "type": "invalidated",
         "tab": TAB_LOW_BATTERY,
         "dataset_version": store.get_version(TAB_LOW_BATTERY),
     })
-    _notify_websocket(hass, {
+    store.increment_version(TAB_UNAVAILABLE, {
         "type": "invalidated",
         "tab": TAB_UNAVAILABLE,
         "dataset_version": store.get_version(TAB_UNAVAILABLE),
     })
     
     _LOGGER.info("Entity metadata refreshed")
-
-
-# For type hints
-hass: HomeAssistant | None = None
-
-
-def _notify_websocket(module_hass: HomeAssistant, message: dict) -> None:
-    """Send message to all connected websocket clients."""
-    # We use the hass data to track active connections
-    # Each connection registers itself via the subscribe command
-    if module_hass and DOMAIN in module_hass.data:
-        connections = module_hass.data[DOMAIN].get("_ws_connections", [])
-        for connection in connections:
-            try:
-                connection.send_message(message)
-            except Exception:  # pylint: disable=broad-except
-                pass  # Log but don't break other connections
