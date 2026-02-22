@@ -11,10 +11,25 @@
 
 | Severity | Count |
 |----------|-------|
-| 🔴 CRITICAL | 2 |
-| 🟠 HIGH | 2 |
+| 🔴 CRITICAL | 1 |
+| 🟠 HIGH | 0 |
 | 🟡 MEDIUM | 3 |
-| 🟢 LOW | 1 |
+| 🟢 LOW | 2 |
+
+## Previous Review Follow-up
+
+This is a re-review of story 4-1-tabbed-interface. The following issues from the previous review have been addressed:
+
+| Issue | Previous Status | Current Status |
+|-------|-----------------|----------------|
+| Panel not registered | 🔴 CRITICAL | 🔴 CRITICAL (unchanged) |
+| No accessibility support | 🔴 CRITICAL | ✅ RESOLVED |
+| Missing threshold slider | 🟠 HIGH | ✅ RESOLVED |
+| No responsive behavior | 🟠 HIGH | ✅ RESOLVED |
+| Typography scale | 🟡 MEDIUM | 🟡 MEDIUM (unchanged) |
+| Hardcoded color fallbacks | 🟡 MEDIUM | 🟡 MEDIUM (unchanged) |
+| No dark mode styles | 🟡 MEDIUM | 🟡 MEDIUM (unchanged) |
+| Sort icons | 🟢 LOW | 🟢 LOW (unchanged) |
 
 ## Pages Reviewed
 
@@ -28,7 +43,7 @@
 
 - The frontend code exists at `custom_components/heimdall_battery_sentinel/www/panel-heimdall.js`
 - Attempted access via `/api/panel/heimdall` returns 404
-- This issue has been noted in Epics 2 and 3 retrospectives but remains unresolved
+- This issue has been noted in Epics 2, 3, and 4 retrospectives but remains unresolved
 - **Action required:** Register the panel in Home Assistant configuration
 
 ## Findings
@@ -54,170 +69,84 @@ $ curl -s -w "\n%{http_code}" http://homeassistant.lan:8123/api/panel/heimdall
 
 ---
 
-#### UX-CRIT-2: No Accessibility Support
-
-**Page:** All
-**Spec Reference:** Accessibility section
-
-**Expected:** 
-- ARIA roles for tables (grid, row, cell)
-- Live regions for count updates
-- Visible focus indicators
-- Keyboard navigation support
-
-**Actual:** No ARIA attributes, no focus indicators, no keyboard support beyond basic clickable elements
-
-**Code Evidence:**
-```javascript
-// No ARIA attributes in the template
-<button class="tab active" data-tab="low_battery">
-  Low Battery <span class="count" id="low-battery-count">0</span>
-</button>
-
-// No focus styles in CSS
-.tab {
-  padding: 8px 16px;
-  border: none;
-  background: var(--ha-card-background, #fff);
-  cursor: pointer;
-  border-radius: 4px;
-  font-size: 14px;
-}
-// Missing: .tab:focus, .tab:focus-visible
-```
-
-**Recommendation:** Add ARIA roles (role="tablist", role="tab", role="tabpanel"), focus-visible styles, and keyboard navigation (Arrow keys for tabs, Tab for table navigation)
-
----
-
-### 🟠 HIGH Issues
-
-#### UX-HIGH-1: Missing Threshold Slider Component
-
-**Page:** All
-**Spec Reference:** Main Page Layout, Threshold Slider Component
-
-**Expected:** Footer controls should include a threshold slider per the spec:
-```
-Footer --> Threshold[Threshold Slider]
-Footer --> Info[Page Info]
-```
-
-**Actual:** No threshold slider in the implementation
-
-**Code Evidence:**
-```javascript
-// Only header, tabs, and content - no footer with threshold slider
-<div class="header">
-  <h1>Heimdall Battery Sentinel</h1>
-</div>
-<div class="tabs">...</div>
-<div id="content"></div>
-// Missing: footer with threshold slider
-```
-
-**Recommendation:** Add threshold slider in footer to match spec layout
-
----
-
-#### UX-HIGH-2: No Responsive Behavior
-
-**Page:** All
-**Spec Reference:** Responsive Behavior
-
-**Expected:**
-```
-Desktop --> 3 Columns: Name, Device, Area
-Tablet --> 2 Columns: Name, Device  
-Mobile --> 1 Column: Name + Details
-```
-
-**Actual:** No media queries - table always shows all 5 columns
-
-**Code Evidence:**
-```javascript
-// No @media queries in the entire file
-// Table always renders all columns:
-<th data-sort="friendly_name">Name</th>
-<th data-sort="area">Area</th>
-<th data-sort="battery_level">Battery</th>
-<th>Manufacturer</th>
-<th>Model</th>
-```
-
-**Recommendation:** Add responsive breakpoints to hide columns on smaller screens
-
----
-
 ### 🟡 MEDIUM Issues
 
-#### UX-MED-1: Hardcoded Color Fallbacks
-
-**Page:** All
-**Spec Reference:** Color Palette (Primary #03A9F4)
-
-**Expected:** Consistent use of HA CSS variables
-**Actual:** Mixed - uses CSS variables but has hardcoded fallbacks that may not match spec
-
-**Code Evidence:**
-```javascript
-background: var(--primary-color, #03a9f4);  // Primary matches spec ✓
-color: var(--secondary-text-color, #666);  // #666 is not in spec
-background: var(--hover-color, #f5f5f5);     // #f5f5f5 is not in spec
-```
-
-**Recommendation:** Use spec tokens for fallback colors
-
----
-
-#### UX-MED-2: Typography Doesn't Match Token Scale
+#### UX-MED-1: Typography Doesn't Match Token Scale
 
 **Page:** Header
-**Spec Reference:** Typography Scale
+**Spec Reference:** Typography Scale (H6 = 1.25rem/20px)
 
-**Expected:** H6 = 1.25rem (20px)
-**Actual:** h1 uses font-size: 24px (not in spec)
+**Expected:** Page title should use H6 = 20px per spec
+**Actual:** h1 uses font-size: 24px
 
 **Code Evidence:**
 ```javascript
 .header h1 {
   margin: 0;
-  font-size: 24px;  // Not in spec's typography scale
+  font-size: 24px;  // Spec says 20px (H6)
   font-weight: 400;
 }
 ```
 
-**Recommendation:** Use 20px (H6) for page title per spec
+**Recommendation:** Change font-size to 20px to match H6 token
 
 ---
 
-#### UX-MED-3: No Dark Mode Specific Styles
+#### UX-MED-2: Incomplete Table ARIA Roles
 
-**Page:** All
-**Spec Reference:** Color Palette - Dark Mode
+**Page:** Data Table
+**Spec Reference:** Accessibility - Table ARIA roles
 
-**Expected:** Full support for HA's dark theme with proper color tokens
-
-**Actual:** Uses CSS variables but no explicit dark mode overrides
+**Expected:** Proper grid roles: role="grid" on table, role="row" on rows, role="gridcell" on cells
+**Actual:** Uses role="grid" but missing row/cell roles
 
 **Code Evidence:**
 ```javascript
-// No dark mode specific styles
-// Relies entirely on HA CSS variables which may not provide all needed values
+<table role="grid">
+  <thead>
+    <tr>  <!-- Should have role="row" -->
+      <th ...>Name</th>  <!-- Should have role="columnheader" -->
+    </tr>
+  </thead>
+  <tbody>
+    <tr>  <!-- Should have role="row" -->
+      <td data-label="Name">...</td>  <!-- Should have role="gridcell" -->
+    </tr>
+  </tbody>
+</table>
+```
+
+**Recommendation:** Add proper ARIA roles to table structure
+
+---
+
+#### UX-MED-3: No Explicit Dark Mode Overrides
+
+**Page:** All
+**Spec Reference:** Color Palette - Dark Mode tokens
+
+**Expected:** Explicit dark mode styles using DM tokens from spec
+**Actual:** Relies entirely on HA CSS variables without explicit dark overrides
+
+**Code Evidence:**
+```javascript
+// No @media (prefers-color-scheme: dark) or .dark-theme overrides
+// Relies on var(--ha-card-background, #fff) which may not work in all cases
 .tab {
-  background: var(--ha-card-background, #fff);  // May not work in dark mode
+  background: var(--ha-card-background, #fff);
 }
 ```
 
-**Recommendation:** Add explicit dark mode overrides using DM tokens from spec
+**Recommendation:** Add explicit dark mode overrides using DM tokens
 
 ---
 
 ### 🟢 LOW Issues
 
-| ID | Issue | Page |
-|----|-------|------|
-| UX-LOW-1 | Sort icons use Unicode arrows (↑↓) instead of HA icons | Table |
+| ID | Issue | Page | Status |
+|----|-------|------|--------|
+| UX-LOW-1 | Sort icons use Unicode arrows (↑↓) instead of HA icons | Table | Unchanged |
+| UX-LOW-2 | Threshold slider shows "(Coming soon)" - not functional | Footer | Works but incomplete |
 
 ---
 
@@ -225,12 +154,12 @@ background: var(--hover-color, #f5f5f5);     // #f5f5f5 is not in spec
 
 | Check | Status | Notes |
 |-------|--------|-------|
-| Focus indicators | ❌ | No focus styles for tabs, buttons, or table |
-| Tab order | ❌ | Not tested (panel inaccessible) |
-| Color contrast | ✅ | Severity colors match spec |
-| ARIA labels | ❌ | No ARIA attributes present |
-| Keyboard navigation | ⚠️ | Basic click works, no arrow key support for tabs |
-| Screen reader | ❌ | No live regions, no roles |
+| Focus indicators | ✅ | .tab:focus and th:focus styles present |
+| Tab order | ✅ | tabindex attributes properly set |
+| Color contrast | ✅ | Severity colors match spec (#f44336, #ff9800, #fdd835) |
+| ARIA labels | ⚠️ | Partial - tabs have roles, but table missing row/cell roles |
+| Keyboard navigation | ✅ | Arrow keys for tabs, Enter/Space for sorting |
+| Screen reader | ⚠️ | Has roles but table structure incomplete |
 
 ---
 
@@ -243,30 +172,23 @@ background: var(--hover-color, #f5f5f5);     // #f5f5f5 is not in spec
    - Cannot perform end-to-end UX testing
    - Required for story acceptance
 
-2. **Add Accessibility Support**
-   - Add ARIA roles (tablist, tab, tabpanel, grid)
-   - Add focus-visible styles
-   - Add keyboard navigation (arrow keys for tabs)
-   - Add live regions for count updates
-
 ### Should Fix
 
-1. **Add Threshold Slider**
-   - Spec requires threshold slider in footer
-   - Missing from current implementation
+1. **Complete Table ARIA Roles**
+   - Add role="row" to tr elements
+   - Add role="columnheader" to th elements  
+   - Add role="gridcell" to td elements
 
-2. **Add Responsive Behavior**
-   - No media queries for mobile/tablet
-   - Table always shows all 5 columns
+2. **Fix Typography**
+   - Change h1 font-size from 24px to 20px (H6 token)
 
-3. **Fix Typography**
-   - Use 20px (H6) for page title instead of 24px
+3. **Add Dark Mode Support**
+   - Add explicit dark mode color overrides
 
 ### Nice to Have
 
-1. Dark mode specific styles
-2. Proper color token fallbacks
-3. HA icons for sort indicators
+1. Make threshold slider functional (remove "(Coming soon)")
+2. Use HA icons for sort indicators instead of Unicode
 
 ---
 
@@ -274,15 +196,23 @@ background: var(--hover-color, #f5f5f5);     // #f5f5f5 is not in spec
 
 **Overall Verdict:** CHANGES_REQUESTED
 
-**Blocking Issues:**
-1. Panel not registered - cannot access for end-to-end testing
-2. No accessibility support - fails WCAG 2.1 AA requirement
+**Progress Since Last Review:**
+- ✅ Accessibility support added (ARIA roles, focus styles, keyboard navigation)
+- ✅ Threshold slider component added to footer
+- ✅ Responsive behavior implemented with media queries
+- ❌ Panel registration issue persists (critical blocker)
+
+**Remaining Issues:**
+1. Panel not registered - prevents end-to-end verification
+2. Typography needs adjustment (24px → 20px)
+3. Table ARIA roles incomplete
+4. No explicit dark mode styles
 
 **Next Steps:**
 1. Register panel in Home Assistant configuration
-2. Add ARIA attributes and focus indicators
-3. Add threshold slider component
-4. Add responsive breakpoints
+2. Complete table ARIA roles
+3. Fix typography token
+4. Add dark mode overrides
 5. Re-run UX review once panel is accessible
 
-**Note:** This review is based on code analysis only. End-to-end screenshot verification could not be performed due to panel registration issue.
+**Note:** This review is based on code analysis. End-to-end screenshot verification could not be performed due to panel registration issue. Code improvements since the previous review are significant - the main critical blocker remains the inaccessible panel.

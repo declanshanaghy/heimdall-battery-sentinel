@@ -55,7 +55,10 @@ class HeimdallPanel {
         .header {
           display: flex;
           align-items: center;
+          justify-content: space-between;
           margin-bottom: 16px;
+          flex-wrap: wrap;
+          gap: 12px;
         }
         .header h1 {
           margin: 0;
@@ -74,6 +77,14 @@ class HeimdallPanel {
           cursor: pointer;
           border-radius: 4px;
           font-size: 14px;
+          transition: background-color 0.2s, color 0.2s;
+        }
+        .tab:hover {
+          background: var(--hover-color, #f0f0f0);
+        }
+        .tab:focus {
+          outline: 2px solid var(--primary-color, #03a9f4);
+          outline-offset: 2px;
         }
         .tab.active {
           background: var(--primary-color, #03a9f4);
@@ -102,6 +113,10 @@ class HeimdallPanel {
         }
         th:hover {
           background: var(--hover-color, #f5f5f5);
+        }
+        th:focus {
+          outline: 2px solid var(--primary-color, #03a9f4);
+          outline-offset: -2px;
         }
         .sort-icon {
           margin-left: 4px;
@@ -132,19 +147,115 @@ class HeimdallPanel {
           padding: 40px;
           color: var(--secondary-text-color, #666);
         }
+        .footer {
+          margin-top: 24px;
+          padding: 16px;
+          background: var(--ha-card-background, #fff);
+          border-radius: 8px;
+          display: flex;
+          align-items: center;
+          gap: 16px;
+          flex-wrap: wrap;
+        }
+        .threshold-label {
+          font-size: 14px;
+          color: var(--secondary-text-color, #666);
+        }
+        .threshold-slider {
+          flex: 1;
+          min-width: 150px;
+        }
+        .threshold-value {
+          font-weight: 500;
+          min-width: 40px;
+        }
+        
+        /* Responsive styles */
+        @media (max-width: 768px) {
+          :host {
+            padding: 12px;
+          }
+          .header h1 {
+            font-size: 20px;
+          }
+          .tabs {
+            width: 100%;
+          }
+          .tab {
+            flex: 1;
+            text-align: center;
+            padding: 10px 8px;
+          }
+          table, thead, tbody, th, td, tr {
+            display: block;
+          }
+          thead tr {
+            position: absolute;
+            top: -9999px;
+            left: -9999px;
+          }
+          tr {
+            margin-bottom: 12px;
+            border: 1px solid var(--divider-color, #e0e0e0);
+            border-radius: 4px;
+            overflow: hidden;
+          }
+          td {
+            border: none;
+            position: relative;
+            padding-left: 50%;
+            border-bottom: 1px solid var(--divider-color, #e0e0e0);
+          }
+          td:last-child {
+            border-bottom: none;
+          }
+          td:before {
+            position: absolute;
+            top: 12px;
+            left: 8px;
+            width: 45%;
+            padding-right: 10px;
+            white-space: nowrap;
+            font-weight: 500;
+            content: attr(data-label);
+          }
+        }
+        
+        @media (max-width: 480px) {
+          :host {
+            padding: 8px;
+          }
+          .header {
+            flex-direction: column;
+            align-items: flex-start;
+          }
+          .footer {
+            flex-direction: column;
+            align-items: flex-start;
+          }
+          .threshold-slider {
+            width: 100%;
+          }
+        }
       </style>
       <div class="header">
         <h1>Heimdall Battery Sentinel</h1>
       </div>
-      <div class="tabs">
-        <button class="tab active" data-tab="low_battery">
+      <div class="tabs" role="tablist" aria-label="Battery monitoring tabs">
+        <button class="tab active" data-tab="low_battery" role="tab" aria-selected="true" aria-controls="content" id="tab-low_battery" tabindex="0">
           Low Battery <span class="count" id="low-battery-count">0</span>
         </button>
-        <button class="tab" data-tab="unavailable">
+        <button class="tab" data-tab="unavailable" role="tab" aria-selected="false" aria-controls="content" id="tab-unavailable" tabindex="-1">
           Unavailable <span class="count" id="unavailable-count">0</span>
         </button>
       </div>
-      <div id="content"></div>
+      <div id="content" role="tabpanel" aria-labelledby="tab-low_battery"></div>
+      <div class="footer">
+        <span class="threshold-label">Battery threshold:</span>
+        <input type="range" class="threshold-slider" min="0" max="100" value="20" aria-label="Battery threshold percentage" />
+        <span class="threshold-value">20%</span>
+        <span class="threshold-label">(Coming soon)</span>
+      </div>
     `;
 
     this._attachListeners();
@@ -155,16 +266,34 @@ class HeimdallPanel {
   _updateTabUI() {
     // Set initial active tab in UI from storage
     this.querySelectorAll('.tab').forEach(t => {
-      t.classList.toggle('active', t.dataset.tab === this.activeTab);
+      const isActive = t.dataset.tab === this.activeTab;
+      t.classList.toggle('active', isActive);
+      t.setAttribute('aria-selected', isActive);
+      t.setAttribute('tabindex', isActive ? '0' : '-1');
     });
   }
 
   _attachListeners() {
+    // Tab click handlers
     this.querySelectorAll('.tab').forEach(tab => {
       tab.addEventListener('click', (e) => {
         const tabName = e.target.dataset.tab;
         this.setActiveTab(tabName);
       });
+    });
+    
+    // Keyboard navigation for tabs
+    this.querySelector('.tabs').addEventListener('keydown', (e) => {
+      const tabs = Array.from(this.querySelectorAll('.tab'));
+      const currentIndex = tabs.findIndex(t => t === document.activeElement);
+      
+      if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+        e.preventDefault();
+        const direction = e.key === 'ArrowRight' ? 1 : -1;
+        const nextIndex = (currentIndex + direction + tabs.length) % tabs.length;
+        tabs[nextIndex].focus();
+        tabs[nextIndex].click();
+      }
     });
   }
 
@@ -172,8 +301,14 @@ class HeimdallPanel {
     this.activeTab = tab;
     this._saveTabToStorage(tab);
     this.querySelectorAll('.tab').forEach(t => {
-      t.classList.toggle('active', t.dataset.tab === tab);
+      const isActive = t.dataset.tab === tab;
+      t.classList.toggle('active', isActive);
+      t.setAttribute('aria-selected', isActive);
+      t.setAttribute('tabindex', isActive ? '0' : '-1');
     });
+    
+    // Update tabpanel label
+    this.querySelector('#content').setAttribute('aria-labelledby', `tab-${tab}`);
     
     if (this.data[tab].length === 0 && !this.endReached[tab]) {
       await this._loadPage(tab);
@@ -303,12 +438,12 @@ class HeimdallPanel {
     }
     
     let html = `
-      <table>
+      <table role="grid">
         <thead>
           <tr>
-            <th data-sort="friendly_name">Name<span class="sort-icon ${this.sortBy === 'friendly_name' ? 'active' : ''}">${this.sortBy === 'friendly_name' ? (this.sortDir === 'asc' ? '↑' : '↓') : ''}</span></th>
-            <th data-sort="area">Area<span class="sort-icon ${this.sortBy === 'area' ? 'active' : ''}">${this.sortBy === 'area' ? (this.sortDir === 'asc' ? '↑' : '↓') : ''}</span></th>
-            ${tab === 'low_battery' ? '<th data-sort="battery_level">Battery<span class="sort-icon ${this.sortBy === \'battery_level\' ? \'active\' : \'\'}">' + (this.sortBy === 'battery_level' ? (this.sortDir === 'asc' ? '↑' : '↓') : '') + '</span></th>' : ''}
+            <th data-sort="friendly_name" tabindex="0">Name<span class="sort-icon ${this.sortBy === 'friendly_name' ? 'active' : ''}">${this.sortBy === 'friendly_name' ? (this.sortDir === 'asc' ? '↑' : '↓') : ''}</span></th>
+            <th data-sort="area" tabindex="0">Area<span class="sort-icon ${this.sortBy === 'area' ? 'active' : ''}">${this.sortBy === 'area' ? (this.sortDir === 'asc' ? '↑' : '↓') : ''}</span></th>
+            ${tab === 'low_battery' ? '<th data-sort="battery_level" tabindex="0">Battery<span class="sort-icon ${this.sortBy === \'battery_level\' ? \'active\' : \'\'}">' + (this.sortBy === 'battery_level' ? (this.sortDir === 'asc' ? '↑' : '↓') : '') + '</span></th>' : ''}
             <th>Manufacturer</th>
             <th>Model</th>
           </tr>
@@ -328,11 +463,11 @@ class HeimdallPanel {
       const displayModel = row.model || 'Unknown';
       html += `
         <tr>
-          <td>${row.friendly_name || row.entity_id}</td>
-          <td>${displayArea}</td>
-          ${tab === 'low_battery' ? `<td class="${severityClass}">${iconHtml}${row.battery_display}</td>` : ''}
-          <td>${displayManufacturer}</td>
-          <td>${displayModel}</td>
+          <td data-label="Name">${row.friendly_name || row.entity_id}</td>
+          <td data-label="Area">${displayArea}</td>
+          ${tab === 'low_battery' ? `<td data-label="Battery" class="${severityClass}">${iconHtml}${row.battery_display}</td>` : ''}
+          <td data-label="Manufacturer">${displayManufacturer}</td>
+          <td data-label="Model">${displayModel}</td>
         </tr>
       `;
     });
@@ -361,6 +496,14 @@ class HeimdallPanel {
         this.data[tab] = [];
         this.endReached[tab] = false;
         this._loadPage(tab);
+      });
+      
+      // Keyboard sort
+      th.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          th.click();
+        }
       });
     });
     

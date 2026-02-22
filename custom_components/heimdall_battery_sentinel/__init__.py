@@ -28,6 +28,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     
     hass.data.setdefault(DOMAIN, {})
     
+    # Register the custom panel
+    await _register_panel(hass)
+    
     # Initialize event subscriptions
     await _setup_event_listeners(hass)
     
@@ -41,6 +44,60 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     
     _LOGGER.info("Heimdall Battery Sentinel integration setup complete")
     return True
+
+
+async def _register_panel(hass: HomeAssistant) -> None:
+    """Register the custom panel with Home Assistant."""
+    import os
+    
+    # Get the custom component's www directory path
+    custom_component_dir = os.path.dirname(__file__)
+    www_path = os.path.join(custom_component_dir, 'www')
+    
+    # Register static path so files are accessible at /heimdall_battery_sentinel/*
+    hass.http.register_static_path(
+        '/heimdall_battery_sentinel',
+        www_path,
+        False  # not directory listing
+    )
+    
+    # Create a custom view to serve the panel at /panel/heimdall
+    from aiohttp import web
+    from homeassistant.components.http import HomeAssistantView
+    
+    panel_js_path = os.path.join(www_path, 'panel-heimdall.js')
+    
+    class HeimdallPanelView(HomeAssistantView):
+        """View to serve the custom panel."""
+        
+        def __init__(self):
+            super().__init__(name="heimdall_panel", url_path="heimdall")
+        
+        async def get(self, request):
+            """Handle GET requests for the panel."""
+            try:
+                with open(panel_js_path, 'r') as f:
+                    content = f.read()
+                return web.Response(text=content, content_type='application/javascript')
+            except Exception as e:
+                _LOGGER.error(f"Error serving panel: {e}")
+                return web.Response(text="Panel not found", status=404)
+    
+    # Register the view
+    hass.http.register_view(HeimdallPanelView())
+    
+    # Also register the panel via Home Assistant frontend
+    try:
+        await hass.components.frontend.async_register_panel(
+            "heimdall",
+            "frontend",
+            "heimdall_battery_sentinel",
+            None
+        )
+    except Exception as e:
+        _LOGGER.warning(f"Could not register panel via frontend: {e}")
+    
+    _LOGGER.info("Custom panel registered at /panel/heimdall")
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
