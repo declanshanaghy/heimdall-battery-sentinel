@@ -19,7 +19,7 @@ epics:
   - id: 2-1
     slug: numeric-battery
     title: Numeric Battery Evaluation
-    status: review
+    status: in-progress
   - id: 2-2
     slug: textual-battery
     title: Textual Battery Handling

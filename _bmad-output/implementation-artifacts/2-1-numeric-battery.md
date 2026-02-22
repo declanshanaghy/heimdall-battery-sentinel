@@ -29,7 +29,7 @@ Implement core battery monitoring for numeric battery entities meeting Home Assi
 - Source: architecture.md#ADR-004 (server-side sorting)
 
 ## Status
-review
+in-progress
 
 ## Tasks
 1. [x] Review existing evaluator.py and store.py implementations
@@ -71,3 +71,4 @@ N/A - No issues encountered
 - 2026-02-21: Numeric battery evaluation tests added (18 tests)
 - 2026-02-21: Paging and sorting tests added (14 tests)
 - 2026-02-21: Server-side paging/sorting implemented in store.py
+- 2026-02-21: Story Acceptance — CHANGES_REQUESTED (1 blocking items)
