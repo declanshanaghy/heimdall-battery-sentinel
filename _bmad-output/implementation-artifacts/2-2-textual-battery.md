@@ -1,6 +1,6 @@
 # Story 2.2: Textual Battery Monitoring
 
-Status: review
+Status: done
 
 ## Story
 As a Home Assistant user,
@@ -64,6 +64,7 @@ N/A - No issues encountered
 ## Change Log
 - 2026-02-20: Story created from Epic 2
 - 2026-02-21: Implemented textual battery handling with filtering, severity, and sorting
+- 2026-02-21: Story Acceptance — ACCEPTED
 
 ### File List
 
