@@ -1,6 +1,6 @@
 # Story 4.1: Tabbed Interface
 
-Status: review
+Status: in-progress
 <!-- NOTE: Status values MUST match sprint-status.yaml exactly: backlog | ready-for-dev | in-progress | review | done -->
 
 ## Story
@@ -90,3 +90,4 @@ N/A - No issues encountered
 ## Change Log
 - 2026-02-20: Story created from Epic 4
 - 2026-02-21: Story implementation completed - Added tab persistence via localStorage and live count updates via websocket subscription
+- 2026-02-21: Story Acceptance — CHANGES_REQUESTED (7 blocking items)
