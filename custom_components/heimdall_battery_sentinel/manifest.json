@@ -1,0 +1,17 @@
+{
+  "domain": "heimdall_battery_sentinel",
+  "name": "Heimdall Battery Sentinel",
+  "version": "0.0.1",
+  "documentation": "https://github.com/declanshanaghy/heimdall-battery-sentinel",
+  "issue": "https://github.com/declanshanaghy/heimdall-battery-sentinel/issues",
+  "codeowners": [
+    "@declanshanaghy"
+  ],
+  "requirements": [],
+  "dependencies": [
+    "http",
+    "websocket_api"
+  ],
+  "code_format": "py3",
+  "config_flow": true
+}
