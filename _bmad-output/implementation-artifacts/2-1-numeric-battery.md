@@ -29,7 +29,7 @@ Implement core battery monitoring for numeric battery entities meeting Home Assi
 - Source: architecture.md#ADR-004 (server-side sorting)
 
 ## Status
-review
+done
 
 ## Tasks
 1. [x] Review existing evaluator.py and store.py implementations
@@ -82,4 +82,4 @@ N/A - No issues encountered
 - 2026-02-21: Server-side paging/sorting implemented in store.py
 - 2026-02-21: Story Acceptance — CHANGES_REQUESTED (1 blocking items)
 - 2026-02-21: Fixed AC #4 - Device-level battery deduplication implemented
-- 2026-02-21: Added 10 unit tests for device deduplication, all 68 tests pass
+- 2026-02-21: Story Acceptance — ACCEPTED
