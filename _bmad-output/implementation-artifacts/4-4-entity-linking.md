@@ -1,5 +1,8 @@
 # Entity Linking
 
+Status: review
+<!-- NOTE: Status values MUST match sprint-status.yaml exactly: backlog | ready-for-dev | in-progress | review | done -->
+
 ## Description
 Implement entity name linking in both Low Battery and Unavailable tables to allow users to navigate to HA entity detail pages by clicking entity names. This is a pure UI feature that adds hyperlink functionality without any backend changes.
 
@@ -9,6 +12,20 @@ Implement entity name linking in both Low Battery and Unavailable tables to allo
 3. Links should work consistently across both tabs and all entities.
 4. The link should open in a new tab without navigating away from the current page.
 5. The link target should be `/config/entities/edit?entity_id={entity_id}`
+
+## Tasks / Subtasks
+
+- [x] Implement entity linking in Low Battery table (AC: #1, #3)
+  - [x] Wrap friendly names in anchor tags with correct URL
+  - [x] Add target="_blank" and rel="noopener"
+  - [x] Add link styling (blue, hover underline)
+- [x] Implement entity linking in Unavailable table (AC: #2, #3)
+  - [x] Wrap friendly names in anchor tags with correct URL
+  - [x] Add target="_blank" and rel="noopener"
+  - [x] Add link styling (blue, hover underline)
+- [x] Handle missing entity_id gracefully (AC: #5)
+  - [x] Render plain text when entity_id is missing
+  - [x] Log errors for missing entity_ids
 
 ## Implementation Notes
 ### Key Relationships
@@ -56,3 +73,30 @@ Implement entity name linking in both Low Battery and Unavailable tables to allo
 
 ### Estimated Effort
 1 day (frontend implementation + testing)
+
+## Dev Agent Record
+
+### Agent Model Used
+minimax-minimax-m2.5
+
+### Debug Log References
+N/A - No issues encountered
+
+### Completion Notes List
+- Implemented entity linking using anchor tags with proper HA entity detail URL format
+- Added target="_blank" and rel="noopener" attributes for security and new tab behavior
+- Added CSS styling (.entity-link) for blue text with hover underline per HA conventions
+- Implemented error handling for missing entity_id (logs console.error, renders plain text)
+- Used encodeURIComponent for safe URL encoding of entity_id
+- All 118 tests pass including 8 new entity linking tests
+
+### File List
+
+| File | Action | Description |
+|------|--------|-------------|
+| `custom_components/heimdall_battery_sentinel/www/panel-heimdall.js` | Modify | Added entity linking with anchor tags, target="_blank", rel="noopener", and link styling |
+| `tests/test_entity_linking.py` | Create | New test file for entity linking functionality (8 tests) |
+
+## Change Log
+- 2026-02-21: Story created from Epic 4
+- 2026-02-22: Story implementation completed - Entity linking added with anchor tags, new tab support, and error handling

@@ -147,6 +147,14 @@ class HeimdallPanel {
         .severity-yellow { color: #fdd835; }
         .severity-orange { color: #ff9800; }
         .severity-red { color: #f44336; }
+        .entity-link {
+          color: var(--primary-color, #03a9f4);
+          text-decoration: none;
+          cursor: pointer;
+        }
+        .entity-link:hover {
+          text-decoration: underline;
+        }
         .severity-icon {
           margin-right: 4px;
           vertical-align: middle;
@@ -515,9 +523,21 @@ class HeimdallPanel {
         }
       }
       
+      // Entity linking: wrap friendly name in anchor tag if entity_id exists
+      const displayName = row.friendly_name || row.entity_id;
+      let nameCell;
+      if (row.entity_id) {
+        const entityUrl = `/config/entities/edit?entity_id=${encodeURIComponent(row.entity_id)}`;
+        nameCell = `<a class="entity-link" href="${entityUrl}" target="_blank" rel="noopener">${displayName}</a>`;
+      } else {
+        // Log error for missing entity_id (per Error Handling in story)
+        console.error('Entity linking error: entity_id is missing for row:', row);
+        nameCell = displayName;
+      }
+      
       html += `
         <tr>
-          <td data-label="Name">${row.friendly_name || row.entity_id}</td>
+          <td data-label="Name">${nameCell}</td>
           <td data-label="Area">${displayArea}</td>
           ${tab === 'low_battery' ? `<td data-label="Battery" class="${severityClass}">${iconHtml}${row.battery_display}</td>` : ''}
           <td data-label="Last Checked">${displayLastChecked}</td>

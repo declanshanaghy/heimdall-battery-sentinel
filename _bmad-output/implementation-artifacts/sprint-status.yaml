@@ -59,7 +59,7 @@ epics:
   - id: 4-4
     slug: entity-linking
     title: Entity Linking
-    status: ready-for-dev
+    status: review
   - id: 4-5
     slug: deployment
     title: Deployment
