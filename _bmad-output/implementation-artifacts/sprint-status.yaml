@@ -63,7 +63,7 @@ epics:
   - id: 4-5
     slug: deployment
     title: Deployment
-    status: review
+    status: in-progress
 - id: 5
   title: Configuration
   stories:
