@@ -136,6 +136,14 @@ class HeimdallPanel {
           padding: 20px;
           color: var(--secondary-text-color, #666);
         }
+        .error-message {
+          background: #ffebee;
+          color: #c62828;
+          padding: 12px 16px;
+          border-radius: 4px;
+          margin-bottom: 16px;
+          border-left: 4px solid #c62828;
+        }
         .severity-yellow { color: #fdd835; }
         .severity-orange { color: #ff9800; }
         .severity-red { color: #f44336; }
@@ -412,6 +420,8 @@ class HeimdallPanel {
       }
     } catch (err) {
       console.error('Failed to load page:', err);
+      // Show user-visible error message (AC #4)
+      this._showError('Failed to load more records. Please try again.');
     }
     
     this.loading = false;
@@ -421,6 +431,34 @@ class HeimdallPanel {
   _updateCounts() {
     this.querySelector('#low-battery-count').textContent = this.counts.low_battery;
     this.querySelector('#unavailable-count').textContent = this.counts.unavailable;
+  }
+
+  _showError(message) {
+    // Create error toast/banner for user-visible error (AC #4)
+    const content = this.querySelector('#content');
+    const existingError = content.querySelector('.error-message');
+    if (existingError) {
+      existingError.remove();
+    }
+    
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'error-message';
+    errorDiv.setAttribute('role', 'alert');
+    errorDiv.textContent = message;
+    
+    // Insert at the top of content
+    if (content.firstChild) {
+      content.insertBefore(errorDiv, content.firstChild);
+    } else {
+      content.appendChild(errorDiv);
+    }
+    
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+      if (errorDiv.parentNode) {
+        errorDiv.remove();
+      }
+    }, 5000);
   }
 
   _render() {
@@ -524,12 +562,12 @@ class HeimdallPanel {
       });
     });
     
-    // Infinite scroll
+    // Infinite scroll - 200px threshold per AC #1
     const observer = new IntersectionObserver((entries) => {
       if (entries[0].isIntersecting && !this.loading && !this.endReached[tab]) {
         this._loadPage(tab);
       }
-    }, { rootMargin: '100px' });
+    }, { rootMargin: '200px' });
     
     const loadingMore = content.querySelector('#loading-more');
     if (loadingMore) {
