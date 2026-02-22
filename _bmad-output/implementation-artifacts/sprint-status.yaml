@@ -3,6 +3,7 @@
 epics:
 - id: 1
   title: Core Integration Setup
+  status: done
   stories:
   - id: 1-1
     slug: project-structure
