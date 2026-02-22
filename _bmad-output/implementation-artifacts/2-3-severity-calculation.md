@@ -16,14 +16,14 @@ I want to see the severity of low battery entities based on their battery level 
 so that I can prioritize which batteries need immediate attention.
 
 ## Acceptance Criteria
-- [ ] AC1: Severity is calculated for numeric battery entities (with state in %) based on the ratio (battery_level / threshold) * 100
-- [ ] AC2: Severity levels are defined as:
+- [x] AC1: Severity is calculated for numeric battery entities (with state in %) based on the ratio (battery_level / threshold) * 100
+- [x] AC2: Severity levels are defined as:
   - Critical: ratio 0-33 (inclusive) → red color and critical icon (mdi:battery-alert)
   - Warning: ratio 34-66 → orange color and warning icon (mdi:battery-low)
   - Notice: ratio 67-100 → yellow color and notice icon (mdi:battery-medium)
-- [ ] AC3: Textual battery entities (with state 'low') are included and have a fixed severity (Critical)
-- [ ] AC4: The color and icon for each row are updated in real-time as the battery level changes
-- [ ] AC5: The threshold is configurable by the user and the severity calculation uses the current threshold
+- [x] AC3: Textual battery entities (with state 'low') are included and have a fixed severity (Critical)
+- [x] AC4: The color and icon for each row are updated in real-time as the battery level changes
+- [x] AC5: The threshold is configurable by the user and the severity calculation uses the current threshold
 
 ## Mermaid Diagram: Severity Calculation Logic
 ```mermaid
@@ -94,6 +94,7 @@ N/A - No issues encountered
 - [2026-02-20] Initial draft (voltage-based)
 - [2026-02-20] Rewritten for Home Assistant percentage-based thresholding
 - [2026-02-21] Story implementation completed - ratio-based severity calculation with tests fixed to match AC2
+- [2026-02-21] Code review fixes: Added AC4 icons to frontend (mdi:battery-alert/low/medium), removed dead calculate_severity() function, updated file list
 
 ### File List
 
@@ -101,3 +102,4 @@ N/A - No issues encountered
 |------|--------|-------------|
 | `custom_components/heimdall_battery_sentinel/evaluator.py` | Modify | Added ratio-based severity calculation (AC #1, #2) and docstrings |
 | `tests/test_numeric_battery.py` | Modify | Fixed test assertions to match correct AC2 severity boundaries |
+| `custom_components/heimdall_battery_sentinel/www/panel-heimdall.js` | Modify | Added severity icons (AC #4): mdi:battery-alert (red), mdi:battery-low (orange), mdi:battery-medium (yellow) |

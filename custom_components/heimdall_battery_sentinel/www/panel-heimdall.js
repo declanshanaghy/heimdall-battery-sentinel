@@ -101,6 +101,10 @@ class HeimdallPanel {
         .severity-yellow { color: #fdd835; }
         .severity-orange { color: #ff9800; }
         .severity-red { color: #f44336; }
+        .severity-icon {
+          margin-right: 4px;
+          vertical-align: middle;
+        }
         .empty-state {
           text-align: center;
           padding: 40px;
@@ -261,11 +265,16 @@ class HeimdallPanel {
     
     rows.forEach(row => {
       const severityClass = row.severity ? `severity-${row.severity}` : '';
+      const severityIcon = row.severity === 'red' ? 'mdi:battery-alert' 
+                        : row.severity === 'orange' ? 'mdi:battery-low'
+                        : row.severity === 'yellow' ? 'mdi:battery-medium'
+                        : '';
+      const iconHtml = severityIcon ? `<ha-icon class="severity-icon" icon="${severityIcon}"></ha-icon>` : '';
       html += `
         <tr>
           <td>${row.friendly_name || row.entity_id}</td>
           <td>${row.area || '-'}</td>
-          ${tab === 'low_battery' ? `<td class="${severityClass}">${row.battery_display}</td>` : ''}
+          ${tab === 'low_battery' ? `<td class="${severityClass}">${iconHtml}${row.battery_display}</td>` : ''}
           <td>${row.manufacturer || '-'}</td>
           <td>${row.model || '-'}</td>
         </tr>

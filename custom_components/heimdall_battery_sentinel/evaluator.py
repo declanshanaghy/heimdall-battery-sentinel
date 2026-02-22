@@ -103,13 +103,3 @@ def evaluate_battery(state: str, unit: str | None, threshold: int) -> dict:
         "numeric": None,
         "severity": None,
     }
-
-
-def calculate_severity(numeric_value: float) -> Severity:
-    """Calculate severity based on numeric battery value."""
-    if numeric_value <= 10:
-        return Severity(SEVERITY_RED)
-    elif numeric_value <= 20:
-        return Severity(SEVERITY_ORANGE)
-    else:
-        return Severity(SEVERITY_YELLOW)
