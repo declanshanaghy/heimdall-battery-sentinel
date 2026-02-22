@@ -270,13 +270,16 @@ class HeimdallPanel {
                         : row.severity === 'yellow' ? 'mdi:battery-medium'
                         : '';
       const iconHtml = severityIcon ? `<ha-icon class="severity-icon" icon="${severityIcon}"></ha-icon>` : '';
+      const displayArea = row.area || 'Unassigned';
+      const displayManufacturer = row.manufacturer || 'Unknown';
+      const displayModel = row.model || 'Unknown';
       html += `
         <tr>
           <td>${row.friendly_name || row.entity_id}</td>
-          <td>${row.area || '-'}</td>
+          <td>${displayArea}</td>
           ${tab === 'low_battery' ? `<td class="${severityClass}">${iconHtml}${row.battery_display}</td>` : ''}
-          <td>${row.manufacturer || '-'}</td>
-          <td>${row.model || '-'}</td>
+          <td>${displayManufacturer}</td>
+          <td>${displayModel}</td>
         </tr>
       `;
     });
