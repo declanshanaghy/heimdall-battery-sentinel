@@ -4,7 +4,7 @@
 - **Id:** 1-2
 - **Size:** 1 day
 - **Epic:** Core Integration Setup (Epic 1)
-- **Status:** ready-for-dev
+- **Status:** review
 
 ## Overview
 Implements event-driven architecture using Home Assistant's event system for:
