@@ -31,6 +31,7 @@ epics:
     status: done
 - id: 3
   title: Unavailable Tracking
+  status: done
   stories:
   - id: 3-1
     slug: unavailable-detection
